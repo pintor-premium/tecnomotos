@@ -1,26 +1,94 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-black: #080808;
+  --color-brand-red: #E10600;
+  --color-brand-darkred: #8B0000;
+  --color-brand-grey: #8C8C8C;
+  --color-brand-silver: #D9D9D9;
+  --color-brand-darkgrey: #121212;
+  --color-brand-card: #161616;
+  --color-brand-input: #1f1f1f;
+  
+  --font-sans: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #080808;
+  --foreground: #FFFFFF;
+  
+  /* Telemetry lines and carbon pattern effects */
+  --carbon-pattern: radial-gradient(circle, #1a1a1a 10%, transparent 11%),
+                    radial-gradient(circle, #1a1a1a 10%, transparent 11%);
+  --carbon-size: 8px 8px;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Custom scrollbars inspired by dashboard meters */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0c0c0c;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E10600;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8B0000;
+}
+
+/* Carbon textures and metallic shine presets */
+.carbon-bg {
+  background-color: #0d0d0d;
+  background-image: linear-gradient(45deg, #121212 25%, transparent 25%), 
+                    linear-gradient(-45deg, #121212 25%, transparent 25%), 
+                    linear-gradient(45deg, transparent 75%, #121212 75%), 
+                    linear-gradient(-45deg, transparent 75%, #121212 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+}
+
+.metallic-border {
+  border: 1px solid rgba(217, 217, 217, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.metallic-border-hover:hover {
+  border-color: rgba(225, 6, 0, 0.4);
+  box-shadow: 0 0 10px rgba(225, 6, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.telemetry-grid {
+  background-size: 40px 40px;
+  background-image: linear-gradient(to right, rgba(140, 140, 140, 0.03) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(140, 140, 140, 0.03) 1px, transparent 1px);
+}
+
+/* Angled decorative lines for racing style */
+.racing-stripe {
+  position: relative;
+}
+
+.racing-stripe::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #E10600 0%, transparent 100%);
 }
