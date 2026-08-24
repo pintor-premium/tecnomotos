@@ -16,9 +16,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'TECNOMOTOS | Performance, Peças e Serviços para Motocicletas',
   description: 'A melhor oficina e loja online de peças de alta performance para motos. MotoGP style, engenharia mecânica premium.',
-  icons: {
-    icon: '/favicon.ico',
-  },
 };
 
 export default function RootLayout({
