@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Wrench, Shield, Zap, Flame, Compass, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 
 export default function HomePage() {
   // Mock data for highlighted products (clearly marked as MOCK)
@@ -22,6 +23,18 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="relative bg-brand-black border-b border-brand-grey/15 pt-20 pb-24 overflow-hidden telemetry-grid">
+        {/* Imagem de Fundo Dinâmica */}
+        <div className="absolute inset-0 z-0 opacity-20">
+          <Image
+            src="/hero.jpg"
+            alt="TECNOMOTOS Workshop & Parts"
+            fill
+            className="object-cover object-center select-none"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-brand-black via-brand-black/80 to-transparent" />
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
           {/* Text and Actions */}
           <div className="max-w-xl text-left space-y-6">
