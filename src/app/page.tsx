@@ -24,7 +24,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative bg-brand-black border-b border-brand-grey/15 pt-20 pb-24 overflow-hidden telemetry-grid">
         {/* Imagem de Fundo Dinâmica */}
-        <div className="absolute inset-0 z-0 opacity-20">
+        <div className="absolute inset-0 z-0 opacity-45">
           <Image
             src="/hero.jpg"
             alt="TECNOMOTOS Workshop & Parts"
