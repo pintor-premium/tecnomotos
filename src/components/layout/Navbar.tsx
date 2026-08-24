@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/ui/logo';
-import { ShoppingCart, User, Search, Menu } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface NavbarProps {
@@ -12,6 +12,8 @@ interface NavbarProps {
 }
 
 export function Navbar({ isAuthenticated = false, userRole = 'CUSTOMER' }: NavbarProps) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const accountHref = !isAuthenticated
     ? '/login'
     : userRole === 'OWNER' || userRole === 'EMPLOYEE'
@@ -72,7 +74,7 @@ export function Navbar({ isAuthenticated = false, userRole = 'CUSTOMER' }: Navba
           {/* Account Button */}
           <Link href={accountHref}>
             <Button variant="secondary" size="sm" className="hidden sm:inline-flex">
-              <User className="w-4 h-4" />
+              <User className="w-4.5 h-4.5" />
               {isAuthenticated ? 'Minha Conta' : 'Acessar'}
             </Button>
             <span className="p-2.5 sm:hidden rounded-sm bg-brand-darkgrey text-brand-grey hover:text-white border border-brand-grey/10 transition-all flex items-center justify-center skew-x-[-6deg]">
@@ -83,11 +85,74 @@ export function Navbar({ isAuthenticated = false, userRole = 'CUSTOMER' }: Navba
           </Link>
 
           {/* Mobile menu trigger */}
-          <button className="md:hidden p-2 text-brand-grey hover:text-white cursor-pointer">
-            <Menu className="w-6 h-6" />
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden p-2 text-brand-grey hover:text-white cursor-pointer transition-colors"
+            aria-label="Menu principal"
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </div>
+
+      {/* Mobile Drawer Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-brand-black border-t border-brand-grey/15 px-4 py-6 space-y-6 animate-fade-in">
+          {/* Search bar inside mobile menu */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Pesquisar peças, marcas..."
+              className="w-full bg-brand-darkgrey border border-brand-grey/25 py-2.5 pl-4 pr-10 text-xs font-mono focus:border-brand-red focus:outline-none transition-all"
+            />
+            <div className="absolute right-3 inset-y-0 flex items-center text-brand-grey pointer-events-none">
+              <Search className="w-4 h-4" />
+            </div>
+          </div>
+
+          {/* Mobile Links */}
+          <nav className="flex flex-col space-y-4 text-xs font-mono uppercase tracking-widest font-bold">
+            <Link
+              href="/"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="hover:text-brand-red transition-colors text-white py-2 border-b border-brand-grey/5"
+            >
+              Home
+            </Link>
+            <Link
+              href="/loja"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="hover:text-brand-red transition-colors text-brand-grey py-2 border-b border-brand-grey/5"
+            >
+              Loja
+            </Link>
+            <Link
+              href="/produtos"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="hover:text-brand-red transition-colors text-brand-grey py-2 border-b border-brand-grey/5"
+            >
+              Peças
+            </Link>
+            <Link
+              href="/oficina"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="hover:text-brand-red transition-colors text-brand-grey py-2 border-b border-brand-grey/5"
+            >
+              Serviços
+            </Link>
+          </nav>
+
+          {/* Account Button Mobile */}
+          <div className="pt-4 border-t border-brand-grey/15">
+            <Link href={accountHref} onClick={() => setIsMobileMenuOpen(false)}>
+              <Button variant="secondary" className="w-full justify-center">
+                <User className="w-4.5 h-4.5" />
+                {isAuthenticated ? 'Minha Conta' : 'Acessar Conta'}
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
