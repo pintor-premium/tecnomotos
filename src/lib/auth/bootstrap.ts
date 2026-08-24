@@ -35,21 +35,34 @@ export async function bootstrapOwner() {
     return { success: false, message: 'Variáveis de ambiente OWNER_EMAIL ou OWNER_PASSWORD não configuradas no servidor.' };
   }
 
-  // 3. Create the user in Supabase Auth
-  const { data: authUser, error: authError } = await adminClient.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: {
-      full_name: 'Proprietário Administrador',
-    },
-  });
+  // 3. Check if a profile with this email already exists
+  const { data: existingProfile } = await adminClient
+    .from('profiles')
+    .select('id')
+    .eq('email', email)
+    .maybeSingle();
 
-  if (authError) {
-    return { success: false, message: `Erro ao criar usuário auth: ${authError.message}` };
+  let userId: string;
+
+  if (existingProfile) {
+    userId = existingProfile.id;
+  } else {
+    // Create the user in Supabase Auth
+    const { data: authUser, error: authError } = await adminClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        full_name: 'Proprietário Administrador',
+      },
+    });
+
+    if (authError) {
+      return { success: false, message: `Erro ao criar usuário auth: ${authError.message}` };
+    }
+
+    userId = authUser.user.id;
   }
-
-  const userId = authUser.user.id;
 
   // The database trigger "on_auth_user_created" runs asynchronously / immediately
   // and creates a profile and a customer entry. We will promote this user to OWNER.
