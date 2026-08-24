@@ -135,7 +135,7 @@ export default function LoginPage() {
                 {isLoading ? 'Autenticando...' : 'Iniciar Sessão'}
               </Button>
 
-              <p className="text-center text-[11px] text-brand-grey font-mono mt-6 uppercase tracking-wider">
+              <p className="text-center text-[10px] text-brand-grey font-mono mt-6 uppercase tracking-normal whitespace-nowrap">
                 Se ainda não tem uma conta, faça seu cadastro{' '}
                 <Link href="/cadastro" className="text-brand-red hover:underline font-bold">
                   Clique aqui
