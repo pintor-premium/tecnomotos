@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toast';
 import { LogIn } from 'lucide-react';
 import { z } from 'zod';
+import Link from 'next/link';
 
 const loginSchema = z.object({
   email: z.string().email('Por favor, informe um e-mail válido.'),
@@ -90,7 +91,9 @@ export default function LoginPage() {
         <Card className="skew-x-[-2deg] border border-brand-grey/15" withStripe>
           <div className="skew-x-[2deg] flex flex-col items-center">
             {/* Header / Logo */}
-            <Logo className="mb-8" />
+            <Link href="/" className="cursor-pointer hover:opacity-90 transition-opacity">
+              <Logo className="mb-8" />
+            </Link>
 
             <h2 className="text-lg font-black italic uppercase tracking-wider text-white mb-2">
               Autenticação de Painel

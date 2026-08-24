@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
@@ -9,7 +10,9 @@ export default function AccessDeniedPage() {
       <div className="max-w-md w-full text-center space-y-8 bg-brand-card border border-brand-red/25 p-8 relative overflow-hidden shadow-2xl skew-x-[-2deg]">
         <div className="skew-x-[2deg] flex flex-col items-center">
           {/* Logo */}
-          <Logo className="mb-6" />
+          <Link href="/" className="cursor-pointer hover:opacity-90 transition-opacity">
+            <Logo className="mb-6" />
+          </Link>
 
           {/* Alert icon */}
           <div className="w-16 h-16 bg-brand-red/10 text-brand-red border border-brand-red/25 flex items-center justify-center rounded-full mb-6">
