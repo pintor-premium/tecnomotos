@@ -24,7 +24,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative bg-brand-black border-b border-brand-grey/15 pt-20 pb-24 overflow-hidden telemetry-grid">
         {/* Imagem de Fundo Dinâmica */}
-        <div className="absolute inset-0 z-0 opacity-45">
+        <div className="absolute inset-0 z-0 opacity-70">
           <Image
             src="/hero.jpg"
             alt="TECNOMOTOS Workshop & Parts"
@@ -32,7 +32,7 @@ export default function HomePage() {
             className="object-cover object-center select-none"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-brand-black via-brand-black/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-brand-black via-brand-black/60 to-transparent" />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
