@@ -46,6 +46,7 @@ export default function AdminProductsPage() {
   const [price, setPrice] = useState('');
   const [stockQuantity, setStockQuantity] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [showInStore, setShowInStore] = useState(false);
 
   // Fallback mock catalog items
   const mockProducts: Product[] = [
@@ -117,6 +118,7 @@ export default function AdminProductsPage() {
     setPrice('');
     setStockQuantity('');
     setImageFile(null);
+    setShowInStore(false);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,7 +169,8 @@ export default function AdminProductsPage() {
           price: finalPrice,
           stock_quantity: finalStock,
           category: category.trim() || null,
-          image_url: uploadedImageUrl || null
+          image_url: uploadedImageUrl || null,
+          show_in_store: showInStore
         });
 
       if (insertError) throw insertError;
@@ -195,7 +198,7 @@ export default function AdminProductsPage() {
 
   const handleCancelarCadastro = () => {
     // If any field is filled, reset them
-    if (sku || location || name || brand || category || price || stockQuantity || imageFile) {
+    if (sku || location || name || brand || category || price || stockQuantity || imageFile || showInStore) {
       resetForm();
       info('Campos Limpos', 'O formulário foi resetado para o próximo produto.');
     }
@@ -367,6 +370,19 @@ export default function AdminProductsPage() {
                     value={stockQuantity}
                     onChange={(e) => setStockQuantity(e.target.value)}
                   />
+                </div>
+                {/* Checkbox for show_in_store */}
+                <div className="flex items-center gap-2 md:col-span-2 pt-2 pb-1">
+                  <input
+                    type="checkbox"
+                    id="showInStore"
+                    checked={showInStore}
+                    onChange={(e) => setShowInStore(e.target.checked)}
+                    className="w-4 h-4 rounded border-brand-grey/25 bg-brand-input text-brand-red focus:ring-brand-red focus:ring-offset-brand-black"
+                  />
+                  <label htmlFor="showInStore" className="text-xs font-mono text-white cursor-pointer select-none uppercase tracking-wider">
+                    Disponibilizar este produto na Loja Online
+                  </label>
                 </div>
                 {/* Product Photo Upload Field */}
                 <div className="space-y-1 md:col-span-2">

@@ -19,6 +19,7 @@ export default async function HomePage() {
     const { data } = await supabase
       .from('products')
       .select('sku, name, price, category, image_url')
+      .eq('show_in_store', true)
       .limit(4);
       
     if (data && data.length > 0) {

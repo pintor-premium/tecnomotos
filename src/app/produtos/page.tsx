@@ -55,6 +55,7 @@ export default function PublicProductsPage() {
         const { data, error } = await supabase
           .from('products')
           .select('sku, name, brand, price, category, image_url')
+          .eq('show_in_store', true)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
