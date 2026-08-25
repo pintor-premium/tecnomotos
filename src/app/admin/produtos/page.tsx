@@ -16,9 +16,9 @@ export default async function AdminProductsPage() {
 
   // Mock products list
   const mockProducts = [
-    { code: 'ESC-GP-01', name: 'Escapamento Esportivo Carbon GP', brand: 'Akrapovic', price: 2450.00, stock: 12 },
-    { code: 'PST-RC-02', name: 'Pastilha de Freio Sinterizada Racing', brand: 'Brembo', price: 280.00, stock: 45 },
-    { code: 'AMR-PR-03', name: 'Amortecedor Traseiro Regulável PRO', brand: 'Öhlins', price: 1890.00, stock: 4 },
+    { code: 'ESC-GP-01', location: 'Corredor A', name: 'Escapamento Esportivo Carbon GP', brand: 'Akrapovic', price: 2450.00, stock: 12 },
+    { code: 'PST-RC-02', location: 'Gaveta B', name: 'Pastilha de Freio Sinterizada Racing', brand: 'Brembo', price: 280.00, stock: 45 },
+    { code: 'AMR-PR-03', location: 'Corredor C', name: 'Amortecedor Traseiro Regulável PRO', brand: 'Öhlins', price: 1890.00, stock: 4 },
   ];
 
   return (
@@ -60,6 +60,7 @@ export default async function AdminProductsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Código</TableHead>
+              <TableHead>Locação</TableHead>
               <TableHead>Nome</TableHead>
               <TableHead>Marca</TableHead>
               <TableHead>Preço Venda</TableHead>
@@ -71,6 +72,7 @@ export default async function AdminProductsPage() {
             {mockProducts.map((p, idx) => (
               <TableRow key={idx}>
                 <TableCell className="font-mono text-brand-red">{p.code}</TableCell>
+                <TableCell className="font-mono text-brand-grey">{p.location}</TableCell>
                 <TableCell className="font-bold text-white">{p.name}</TableCell>
                 <TableCell>{p.brand}</TableCell>
                 <TableCell className="font-mono text-white">
