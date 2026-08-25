@@ -11,10 +11,10 @@ import Image from 'next/image';
 export default function HomePage() {
   // Mock data for highlighted products (clearly marked as MOCK)
   const mockFeaturedProducts = [
-    { id: '1', name: 'Escapamento Esportivo Carbon GP', category: 'Escapamentos', price: 2450.00, speedAccent: 'Alta Vazão' },
-    { id: '2', name: 'Pastilha de Freio Sinterizada Racing', category: 'Freios', price: 280.00, speedAccent: 'Fricção Máxima' },
-    { id: '3', name: 'Amortecedor Traseiro Regulável PRO', category: 'Suspensão', price: 1890.00, speedAccent: 'Ajuste Fino' },
-    { id: '4', name: 'Pneu Superbike Slick Radial', category: 'Pneus', price: 1200.00, speedAccent: 'Aderência Pista' },
+    { id: '1', name: 'Escapamento Esportivo Carbon GP', category: 'Escapamentos', price: 2450.00, speedAccent: 'Alta Vazão', image: 'https://images.unsplash.com/photo-1615887023516-9b6bcd559e87?q=80&w=600&auto=format&fit=crop' },
+    { id: '2', name: 'Pastilha de Freio Sinterizada Racing', category: 'Freios', price: 280.00, speedAccent: 'Fricção Máxima', image: 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?q=80&w=600&auto=format&fit=crop' },
+    { id: '3', name: 'Amortecedor Traseiro Regulável PRO', category: 'Suspensão', price: 1890.00, speedAccent: 'Ajuste Fino', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=600&auto=format&fit=crop' },
+    { id: '4', name: 'Pneu Superbike Slick Radial', category: 'Pneus', price: 1200.00, speedAccent: 'Aderência Pista', image: 'https://images.unsplash.com/photo-1591439657848-9f4b9ce436b9?q=80&w=600&auto=format&fit=crop' },
   ];
 
   return (
@@ -115,23 +115,36 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {mockFeaturedProducts.map((product) => (
-              <Card key={product.id} hoverEffect className="flex flex-col justify-between" withStripe>
-                <div>
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-[9px] font-mono text-brand-grey uppercase tracking-wider">
-                      {product.category}
-                    </span>
-                    <Badge variant="info">{product.speedAccent}</Badge>
-                  </div>
-                  <h3 className="text-sm font-bold text-white mb-4 line-clamp-2">{product.name}</h3>
+              <Card key={product.id} hoverEffect className="flex flex-col justify-between overflow-hidden" withStripe>
+                {/* Imagem do Produto */}
+                <div className="relative w-full h-40 bg-brand-darkgrey border-b border-brand-grey/10 mb-4 overflow-hidden rounded-t">
+                  <Image
+                    src={product.image}
+                    alt={product.name}
+                    fill
+                    className="object-cover hover:scale-105 transition-transform duration-300 select-none"
+                    sizes="(max-w-7xl) 25vw, 100vw"
+                  />
                 </div>
-                <div className="mt-auto pt-4 border-t border-brand-grey/10 flex items-center justify-between">
-                  <span className="text-base font-black text-white italic">
-                    R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
-                  <Button variant="secondary" size="sm" href="/login">
-                    Detalhes
-                  </Button>
+                
+                <div className="px-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[9px] font-mono text-brand-grey uppercase tracking-wider">
+                        {product.category}
+                      </span>
+                      <Badge variant="info">{product.speedAccent}</Badge>
+                    </div>
+                    <h3 className="text-sm font-bold text-white mb-4 line-clamp-2">{product.name}</h3>
+                  </div>
+                  <div className="mt-auto pt-4 border-t border-brand-grey/10 flex items-center justify-between pb-2">
+                    <span className="text-base font-black text-white italic">
+                      R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                    <Button variant="secondary" size="sm" href="/login">
+                      Detalhes
+                    </Button>
+                  </div>
                 </div>
               </Card>
             ))}
