@@ -16,6 +16,7 @@ interface Product {
   brand: string;
   price: number;
   category: string;
+  image_url?: string;
 }
 
 export default function PublicProductsPage() {
@@ -31,7 +32,8 @@ export default function PublicProductsPage() {
     { sku: 'PNE-SB-04', name: 'Pneu Superbike Slick Radial', brand: 'Pirelli', price: 1200.00, category: 'Pneus' },
   ];
 
-  const getProductImage = (sku: string) => {
+  const getProductImage = (sku: string, imageUrl?: string) => {
+    if (imageUrl) return imageUrl;
     switch (sku) {
       case 'ESC-GP-01':
         return 'https://images.unsplash.com/photo-1615887023516-9b6bcd559e87?q=80&w=600&auto=format&fit=crop';
@@ -52,7 +54,7 @@ export default function PublicProductsPage() {
       try {
         const { data, error } = await supabase
           .from('products')
-          .select('sku, name, brand, price, category')
+          .select('sku, name, brand, price, category, image_url')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -119,7 +121,7 @@ export default function PublicProductsPage() {
                     {/* Imagem do Produto */}
                     <div className="relative w-full h-40 bg-brand-darkgrey border-b border-brand-grey/10 mb-4 overflow-hidden rounded-t">
                       <Image
-                        src={getProductImage(p.sku)}
+                        src={getProductImage(p.sku, p.image_url)}
                         alt={p.name}
                         fill
                         className="object-cover hover:scale-105 transition-transform duration-300 select-none"

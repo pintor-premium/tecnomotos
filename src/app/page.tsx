@@ -18,26 +18,30 @@ export default async function HomePage() {
     const supabase = await createClient();
     const { data } = await supabase
       .from('products')
-      .select('sku, name, price, category')
+      .select('sku, name, price, category, image_url')
       .limit(4);
       
     if (data && data.length > 0) {
       featuredProducts = data.map((p) => {
         let speedAccent = 'Componente';
-        let image = 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=600&auto=format&fit=crop';
+        let image = p.image_url || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=600&auto=format&fit=crop';
         
-        if (p.sku === 'ESC-GP-01') {
-          speedAccent = 'Alta Vazão';
-          image = 'https://images.unsplash.com/photo-1615887023516-9b6bcd559e87?q=80&w=600&auto=format&fit=crop';
-        } else if (p.sku === 'PST-RC-02') {
-          speedAccent = 'Fricção Máxima';
-          image = 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?q=80&w=600&auto=format&fit=crop';
-        } else if (p.sku === 'AMR-PR-03') {
-          speedAccent = 'Ajuste Fino';
-          image = 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=600&auto=format&fit=crop';
-        } else if (p.sku === 'PNE-SB-04') {
-          speedAccent = 'Aderência Pista';
-          image = 'https://images.unsplash.com/photo-1591439657848-9f4b9ce436b9?q=80&w=600&auto=format&fit=crop';
+        if (!p.image_url) {
+          if (p.sku === 'ESC-GP-01') {
+            speedAccent = 'Alta Vazão';
+            image = 'https://images.unsplash.com/photo-1615887023516-9b6bcd559e87?q=80&w=600&auto=format&fit=crop';
+          } else if (p.sku === 'PST-RC-02') {
+            speedAccent = 'Fricção Máxima';
+            image = 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?q=80&w=600&auto=format&fit=crop';
+          } else if (p.sku === 'AMR-PR-03') {
+            speedAccent = 'Ajuste Fino';
+            image = 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=600&auto=format&fit=crop';
+          } else if (p.sku === 'PNE-SB-04') {
+            speedAccent = 'Aderência Pista';
+            image = 'https://images.unsplash.com/photo-1591439657848-9f4b9ce436b9?q=80&w=600&auto=format&fit=crop';
+          }
+        } else {
+          speedAccent = p.category || 'Novidade';
         }
         
         return {

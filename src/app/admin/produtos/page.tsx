@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useToast } from '@/components/ui/toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldAlert, X, Plus, Check } from 'lucide-react';
+import { ShieldAlert, X, Check, Image as ImageIcon } from 'lucide-react';
 
 interface Product {
   id?: string;
@@ -22,6 +22,7 @@ interface Product {
   price: number;
   stock_quantity: number;
   category: string;
+  image_url?: string;
 }
 
 export default function AdminProductsPage() {
@@ -44,6 +45,7 @@ export default function AdminProductsPage() {
   const [category, setCategory] = useState('');
   const [price, setPrice] = useState('');
   const [stockQuantity, setStockQuantity] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   // Fallback mock catalog items
   const mockProducts: Product[] = [
@@ -93,7 +95,7 @@ export default function AdminProductsPage() {
         return;
       }
 
-      // Check create permission (Owner or price manager)
+      // Check create permission
       const { data: hasCreate } = await supabase.rpc('has_permission', {
         user_uuid: user.id,
         required_permission: 'products.price.update'
@@ -114,29 +116,58 @@ export default function AdminProductsPage() {
     setCategory('');
     setPrice('');
     setStockQuantity('');
+    setImageFile(null);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+    }
   };
 
   const handleConfirmCadastro = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sku || !name || !price || !stockQuantity) {
-      error('Preenchimento Obrigatório', 'Por favor, preencha SKU, Nome, Preço e Estoque.');
-      return;
-    }
-
     setIsSaving(true);
 
     try {
-      // Save product to Supabase DB products table
+      // 1. Resolve optional default fields
+      const finalSku = sku.trim() || `SKU-${Math.floor(100000 + Math.random() * 900000)}`;
+      const finalName = name.trim() || 'Produto Sem Nome';
+      const finalPrice = parseFloat(price) || 0;
+      const finalStock = parseInt(stockQuantity) || 0;
+
+      // 2. Upload file to Supabase Storage if present
+      let uploadedImageUrl = '';
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${finalSku}_${Date.now()}.${fileExt}`;
+        const filePath = `products/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath);
+
+        uploadedImageUrl = urlData.publicUrl;
+      }
+
+      // 3. Save product to Supabase DB products table
       const { error: insertError } = await supabase
         .from('products')
         .insert({
-          sku,
-          location: location || null,
-          name,
-          brand: brand || null,
-          price: parseFloat(price) || 0,
-          stock_quantity: parseInt(stockQuantity) || 0,
-          category: category || null
+          sku: finalSku,
+          location: location.trim() || null,
+          name: finalName,
+          brand: brand.trim() || null,
+          price: finalPrice,
+          stock_quantity: finalStock,
+          category: category.trim() || null,
+          image_url: uploadedImageUrl || null
         });
 
       if (insertError) throw insertError;
@@ -147,7 +178,7 @@ export default function AdminProductsPage() {
       // Show success overlay in the center of the screen
       setShowSuccessOverlay(true);
 
-      // Auto close success overlay after 2.5 seconds (reading time), keeping modal open
+      // Auto close success overlay after 2.5 seconds, keeping modal open
       setTimeout(() => {
         setShowSuccessOverlay(false);
       }, 2500);
@@ -164,7 +195,7 @@ export default function AdminProductsPage() {
 
   const handleCancelarCadastro = () => {
     // If any field is filled, reset them
-    if (sku || location || name || brand || category || price || stockQuantity) {
+    if (sku || location || name || brand || category || price || stockQuantity || imageFile) {
       resetForm();
       info('Campos Limpos', 'O formulário foi resetado para o próximo produto.');
     }
@@ -227,7 +258,10 @@ export default function AdminProductsPage() {
             <TableBody>
               {products.map((p, idx) => (
                 <TableRow key={idx}>
-                  <TableCell className="font-mono text-brand-red">{p.sku}</TableCell>
+                  <TableCell className="font-mono text-brand-red flex items-center gap-1.5">
+                    {p.image_url ? <ImageIcon className="w-3.5 h-3.5 text-emerald-500" /> : null}
+                    {p.sku}
+                  </TableCell>
                   <TableCell className="font-mono text-brand-grey">{p.location || 'Sem Locação'}</TableCell>
                   <TableCell className="font-bold text-white">{p.name}</TableCell>
                   <TableCell>{p.brand || 'Genérico'}</TableCell>
@@ -252,7 +286,7 @@ export default function AdminProductsPage() {
       {/* REGISTRATION MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-xs">
-          <Card className="w-full max-w-xl mx-4 relative p-6 space-y-6" withStripe>
+          <Card className="w-full max-w-xl mx-4 relative p-6 space-y-6 max-h-[90vh] overflow-y-auto" withStripe>
             {/* Close Button (X) */}
             <button
               onClick={() => {
@@ -276,12 +310,11 @@ export default function AdminProductsPage() {
             <form onSubmit={handleConfirmCadastro} className="space-y-4 text-left">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-mono text-brand-grey uppercase">Código (SKU) *</label>
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Código (SKU) (Opcional)</label>
                   <Input
-                    placeholder="Ex: PNE-SB-04"
+                    placeholder="Auto-gerado se vazio"
                     value={sku}
                     onChange={(e) => setSku(e.target.value)}
-                    required
                   />
                 </div>
                 <div className="space-y-1">
@@ -293,12 +326,11 @@ export default function AdminProductsPage() {
                   />
                 </div>
                 <div className="space-y-1 md:col-span-2">
-                  <label className="text-[10px] font-mono text-brand-grey uppercase">Nome do Produto *</label>
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Nome do Produto (Opcional)</label>
                   <Input
                     placeholder="Ex: Pneu Pirelli Superbike Diablo"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    required
                   />
                 </div>
                 <div className="space-y-1">
@@ -318,25 +350,39 @@ export default function AdminProductsPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-mono text-brand-grey uppercase">Preço de Venda (R$) *</label>
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Preço de Venda (R$) (Opcional)</label>
                   <Input
                     type="number"
                     step="0.01"
                     placeholder="0.00"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    required
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-mono text-brand-grey uppercase">Estoque Inicial (Qtd) *</label>
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Estoque Inicial (Qtd) (Opcional)</label>
                   <Input
                     type="number"
                     placeholder="0"
                     value={stockQuantity}
                     onChange={(e) => setStockQuantity(e.target.value)}
-                    required
                   />
+                </div>
+                {/* Product Photo Upload Field */}
+                <div className="space-y-1 md:col-span-2">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Foto do Produto</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="w-full text-xs font-mono bg-brand-input border border-brand-grey/25 text-brand-grey rounded px-3 py-2 focus:outline-none focus:border-brand-red cursor-pointer file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-[10px] file:font-mono file:font-bold file:uppercase file:bg-brand-red file:text-white file:hover:bg-brand-darkred file:cursor-pointer"
+                  />
+                  {imageFile && (
+                    <p className="text-[10px] text-emerald-500 font-mono mt-1 flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" />
+                      Imagem selecionada: {imageFile.name}
+                    </p>
+                  )}
                 </div>
               </div>
 
