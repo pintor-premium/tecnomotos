@@ -7,15 +7,62 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Wrench, Shield, Zap, Flame, Compass, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
+import { createClient } from '@/lib/supabase/server';
 
-export default function HomePage() {
-  // Mock data for highlighted products (clearly marked as MOCK)
-  const mockFeaturedProducts = [
-    { id: '1', name: 'Escapamento Esportivo Carbon GP', category: 'Escapamentos', price: 2450.00, speedAccent: 'Alta Vazão', image: 'https://images.unsplash.com/photo-1615887023516-9b6bcd559e87?q=80&w=600&auto=format&fit=crop' },
-    { id: '2', name: 'Pastilha de Freio Sinterizada Racing', category: 'Freios', price: 280.00, speedAccent: 'Fricção Máxima', image: 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?q=80&w=600&auto=format&fit=crop' },
-    { id: '3', name: 'Amortecedor Traseiro Regulável PRO', category: 'Suspensão', price: 1890.00, speedAccent: 'Ajuste Fino', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=600&auto=format&fit=crop' },
-    { id: '4', name: 'Pneu Superbike Slick Radial', category: 'Pneus', price: 1200.00, speedAccent: 'Aderência Pista', image: 'https://images.unsplash.com/photo-1591439657848-9f4b9ce436b9?q=80&w=600&auto=format&fit=crop' },
-  ];
+export const dynamic = 'force-dynamic';
+
+export default async function HomePage() {
+  // Fetch products from database
+  let featuredProducts: { id: string; name: string; category: string; price: number; speedAccent: string; image: string }[] = [];
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from('products')
+      .select('sku, name, price, category')
+      .limit(4);
+      
+    if (data && data.length > 0) {
+      featuredProducts = data.map((p) => {
+        let speedAccent = 'Componente';
+        let image = 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=600&auto=format&fit=crop';
+        
+        if (p.sku === 'ESC-GP-01') {
+          speedAccent = 'Alta Vazão';
+          image = 'https://images.unsplash.com/photo-1615887023516-9b6bcd559e87?q=80&w=600&auto=format&fit=crop';
+        } else if (p.sku === 'PST-RC-02') {
+          speedAccent = 'Fricção Máxima';
+          image = 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?q=80&w=600&auto=format&fit=crop';
+        } else if (p.sku === 'AMR-PR-03') {
+          speedAccent = 'Ajuste Fino';
+          image = 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=600&auto=format&fit=crop';
+        } else if (p.sku === 'PNE-SB-04') {
+          speedAccent = 'Aderência Pista';
+          image = 'https://images.unsplash.com/photo-1591439657848-9f4b9ce436b9?q=80&w=600&auto=format&fit=crop';
+        }
+        
+        return {
+          id: p.sku,
+          name: p.name,
+          category: p.category || 'Peças',
+          price: p.price,
+          speedAccent,
+          image
+        };
+      });
+    }
+  } catch (err) {
+    console.warn('[Home] DB connection failed, using local mock.', err);
+  }
+
+  // Fallback if DB is empty or connection fails
+  if (featuredProducts.length === 0) {
+    featuredProducts = [
+      { id: 'ESC-GP-01', name: 'Escapamento Esportivo Carbon GP', category: 'Escapamentos', price: 2450.00, speedAccent: 'Alta Vazão', image: 'https://images.unsplash.com/photo-1615887023516-9b6bcd559e87?q=80&w=600&auto=format&fit=crop' },
+      { id: 'PST-RC-02', name: 'Pastilha de Freio Sinterizada Racing', category: 'Freios', price: 280.00, speedAccent: 'Fricção Máxima', image: 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?q=80&w=600&auto=format&fit=crop' },
+      { id: 'AMR-PR-03', name: 'Amortecedor Traseiro Regulável PRO', category: 'Suspensão', price: 1890.00, speedAccent: 'Ajuste Fino', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=600&auto=format&fit=crop' },
+      { id: 'PNE-SB-04', name: 'Pneu Superbike Slick Radial', category: 'Pneus', price: 1200.00, speedAccent: 'Aderência Pista', image: 'https://images.unsplash.com/photo-1591439657848-9f4b9ce436b9?q=80&w=600&auto=format&fit=crop' },
+    ];
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -114,7 +161,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {mockFeaturedProducts.map((product) => (
+            {featuredProducts.map((product) => (
               <Card key={product.id} hoverEffect className="flex flex-col justify-between overflow-hidden" withStripe>
                 {/* Imagem do Produto */}
                 <div className="relative w-full h-40 bg-brand-darkgrey border-b border-brand-grey/10 mb-4 overflow-hidden rounded-t">
