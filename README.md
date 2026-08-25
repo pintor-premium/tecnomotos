@@ -111,27 +111,49 @@ Acesse o endereço [http://localhost:3000](http://localhost:3000) no seu navegad
 
 ---
 
-## ⚙️ Stripe Test & NFC-e Mock
+## ⚙️ Stripe Test & NFC-e (Configuração e Testes)
 
-* **Stripe**: Configurado para funcionar inicialmente em modo de teste (`STRIPE_MODE=test`). A classe abstrata `PaymentService` e sua implementação `StripePaymentService` estão preparadas para a próxima fase. O webhook de entrada está exposto em `/api/webhooks/stripe`.
-* **NFC-e**: Configurado para funcionar sob o modo de simulação fiscal (`FISCAL_ENVIRONMENT=mock`), registrando parâmetros detalhados de faturamento no console (`MockFiscalService`) sem realizar emissões de nota reais junto à SEFAZ nesta etapa.
+* **Stripe**: Configurado para funcionar inicialmente em modo de teste (`STRIPE_MODE=test`).
+* **Módulo Fiscal (NFC-e MT)**: O sistema de emissão fiscal suporta três ambientes: `mock` (padrão), `homologation` (homologação) e `production` (produção). O ambiente de produção está **bloqueado** por padrão.
+
+### Variáveis de Ambiente Fiscal (.env ou Vercel)
+Adicione as seguintes chaves no seu arquivo de ambiente local ou nas variáveis de deploy da Vercel (Secrets do Servidor):
+```env
+FISCAL_ENVIRONMENT=mock
+FISCAL_UF=MT
+FISCAL_MODEL=65
+FISCAL_CNPJ=00.000.000/0001-00
+FISCAL_IE=123456789
+FISCAL_CRT=1
+FISCAL_CERTIFICATE_BASE64=string_base64_do_certificado_A1
+FISCAL_CERTIFICATE_PASSWORD=senha_do_certificado_A1
+FISCAL_CSC=token_csc_da_sefaz_mt
+FISCAL_CSC_ID=000001
+FISCAL_NFCE_SERIES=1
+FISCAL_NFCE_START_NUMBER=1
+```
+
+### Como Executar os Testes Unitários Fiscais
+Para validar todas as estruturas e regras tributárias (NCM, CFOP, CRT, CSOSN/CST, geração de chave de acesso com módulo 11 e links de QR Code):
+```bash
+npm run test:fiscal
+```
+
+### Como Testar a Emissão Simulada (Mock)
+1. Faça login como **OWNER** no painel administrativo (`admin@tecnomotos.com.br`).
+2. Acesse a rota `/admin/fiscal` (NFC-e).
+3. Na seção **Simular Emissão por Pedidos Pendentes**, clique em **Emitir NFC-e** em qualquer um dos pedidos fictícios.
+4. O sistema gerará a estrutura XML em tempo real, validará as regras e registrará a nota autorizada em `fiscal_documents` e `fiscal_events`.
+5. Você poderá ver os links para baixar o **XML** e visualizar o **DANFE (PDF)** simulados.
+6. Acesse a sub-rota `/admin/fiscal/configuracoes` para gerenciar os dados da empresa, limites numéricos, trocar de ambiente e rodar o botão **Testar Conexão com SEFAZ**.
 
 ---
 
 ## 🌐 Publicando na Vercel
 
-O projeto está totalmente configurado e preparado para deploy na Vercel:
-1. Crie um novo projeto na Vercel e importe o seu repositório da TECNOMOTOS.
-2. Em **Environment Variables**, adicione as mesmas chaves do seu arquivo `.env.local`:
-   * `NEXT_PUBLIC_SUPABASE_URL`
-   * `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   * `SUPABASE_SERVICE_ROLE_KEY`
-   * `OWNER_EMAIL` (Temporariamente para o bootstrap inicial)
-   * `OWNER_PASSWORD` (Temporariamente para o bootstrap inicial)
-   * `STRIPE_SECRET_KEY`
-   * `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-   * `STRIPE_WEBHOOK_SECRET`
-   * `STRIPE_MODE=test`
-   * `FISCAL_ENVIRONMENT=mock`
-3. A Vercel executará o `npm run build` automaticamente com validações de lint e typecheck.
-4. Após o primeiro deploy bem-sucedido na Vercel, acesse `https://seu-dominio.vercel.app/api/auth/bootstrap` enviando um método `POST` para ativar o primeiro proprietário.
+O projeto está totalmente preparado para deploy na Vercel:
+1. Importe o repositório no painel da Vercel.
+2. Em **Environment Variables**, configure as variáveis do banco Supabase, Stripe e chaves fiscais (`FISCAL_ENVIRONMENT=mock`).
+3. O build de produção será executado com testes de lint e typecheck.
+4. Faça a requisição `POST` em `/api/auth/bootstrap` para ativar o primeiro proprietário.
+

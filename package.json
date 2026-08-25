@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:fiscal": "npx tsx src/lib/services/fiscal/fiscal-tests.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
