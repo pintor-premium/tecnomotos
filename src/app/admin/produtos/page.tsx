@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useToast } from '@/components/ui/toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldAlert, X, Check, Image as ImageIcon } from 'lucide-react';
+import { ShieldAlert, X, Check, Image as ImageIcon, Search } from 'lucide-react';
 
 interface Product {
   id?: string;
@@ -253,12 +253,13 @@ export default function AdminProductsPage() {
         </div>
 
         {/* Search Input */}
-        <div className="w-full max-w-sm">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-grey pointer-events-none" />
           <Input
             placeholder="Pesquisar por código, nome, marca ou locação..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="text-xs font-mono"
+            className="pl-9 text-xs font-mono"
           />
         </div>
 
