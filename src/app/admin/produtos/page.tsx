@@ -36,6 +36,7 @@ export default function AdminProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Form states
   const [sku, setSku] = useState('');
@@ -204,6 +205,18 @@ export default function AdminProductsPage() {
     }
   };
 
+  const filteredProducts = products.filter((p) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+    return (
+      p.sku.toLowerCase().includes(query) ||
+      p.name.toLowerCase().includes(query) ||
+      (p.brand && p.brand.toLowerCase().includes(query)) ||
+      (p.location && p.location.toLowerCase().includes(query)) ||
+      (p.category && p.category.toLowerCase().includes(query))
+    );
+  });
+
   return (
     <div className="space-y-6 text-left relative">
       <div>
@@ -239,6 +252,16 @@ export default function AdminProductsPage() {
           )}
         </div>
 
+        {/* Search Input */}
+        <div className="w-full max-w-sm">
+          <Input
+            placeholder="Pesquisar por código, nome, marca ou locação..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="text-xs font-mono"
+          />
+        </div>
+
         {isLoading ? (
           <div className="space-y-4">
             <Skeleton className="h-10 w-full" />
@@ -259,7 +282,7 @@ export default function AdminProductsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((p, idx) => (
+              {filteredProducts.map((p, idx) => (
                 <TableRow key={idx}>
                   <TableCell className="font-mono text-brand-red flex items-center gap-1.5">
                     {p.image_url ? <ImageIcon className="w-3.5 h-3.5 text-emerald-500" /> : null}
