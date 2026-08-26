@@ -24,6 +24,7 @@ interface Product {
   category: string;
   image_url?: string;
   min_stock_quantity?: number;
+  show_in_store?: boolean;
 }
 
 export default function AdminProductsPage() {
@@ -35,8 +36,11 @@ export default function AdminProductsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  const [showEditSuccessOverlay, setShowEditSuccessOverlay] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Form states
@@ -210,6 +214,94 @@ export default function AdminProductsPage() {
     }
   };
 
+  const handleOpenEdit = (p: Product) => {
+    setSku(p.sku);
+    setLocation(p.location || '');
+    setName(p.name);
+    setBrand(p.brand || '');
+    setCategory(p.category || '');
+    setPrice(p.price.toString());
+    setStockQuantity(p.stock_quantity.toString());
+    setMinStock((p.min_stock_quantity || 0).toString());
+    setShowInStore(!!p.show_in_store);
+    setSelectedProduct(p);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditConfirm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProduct) return;
+    setIsSaving(true);
+
+    try {
+      const finalSku = sku.trim() || selectedProduct.sku;
+      const finalName = name.trim() || 'Produto Sem Nome';
+      const finalPrice = parseFloat(price) || 0;
+      const finalStock = parseInt(stockQuantity) || 0;
+      const finalMinStock = parseInt(minStock) || 0;
+
+      // Upload file to Supabase Storage if a new one is selected
+      let uploadedImageUrl = selectedProduct.image_url || null;
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${finalSku}_${Date.now()}.${fileExt}`;
+        const filePath = `products/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath);
+
+        uploadedImageUrl = urlData.publicUrl;
+      }
+
+      // Update database products table
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({
+          sku: finalSku,
+          location: location.trim() || null,
+          name: finalName,
+          brand: brand.trim() || null,
+          price: finalPrice,
+          stock_quantity: finalStock,
+          min_stock_quantity: finalMinStock,
+          category: category.trim() || null,
+          image_url: uploadedImageUrl,
+          show_in_store: showInStore
+        })
+        .eq('sku', selectedProduct.sku); // Match by original SKU
+
+      if (updateError) throw updateError;
+
+      // Close modal and reset fields
+      setIsEditModalOpen(false);
+      resetForm();
+      setSelectedProduct(null);
+
+      // Show success edit overlay in the center of the screen
+      setShowEditSuccessOverlay(true);
+
+      // Auto close success overlay after 2.5 seconds (reading time)
+      setTimeout(() => {
+        setShowEditSuccessOverlay(false);
+      }, 2500);
+
+      // Refresh product list
+      await fetchProducts();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao atualizar produto.';
+      error('Erro de Edição', msg);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const filteredProducts = products.filter((p) => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return true;
@@ -303,7 +395,9 @@ export default function AdminProductsPage() {
                   <TableCell className="font-mono">{p.stock_quantity} un</TableCell>
                   <TableCell className="text-right">
                     {isOwner ? (
-                      <Button variant="secondary" size="sm">Editar Preço</Button>
+                      <Button variant="secondary" size="sm" onClick={() => handleOpenEdit(p)}>
+                        Editar Produto
+                      </Button>
                     ) : (
                       <span className="text-[11px] font-mono text-brand-grey uppercase">Somente Leitura</span>
                     )}
@@ -474,6 +568,176 @@ export default function AdminProductsPage() {
             </h3>
             <p className="text-[11px] text-brand-grey leading-normal">
               O formulário foi resetado. Você pode continuar cadastrando produtos.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT MODAL */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-xs">
+          <Card className="w-full max-w-xl mx-4 relative p-6 space-y-6 max-h-[90vh] overflow-y-auto" withStripe>
+            {/* Close Button (X) */}
+            <button
+              onClick={() => {
+                setIsEditModalOpen(false);
+                resetForm();
+                setSelectedProduct(null);
+              }}
+              className="absolute top-4 right-4 text-brand-grey hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div>
+              <h3 className="text-lg font-black italic uppercase tracking-tight text-white">
+                Editar Produto
+              </h3>
+              <p className="text-[10px] text-brand-grey font-mono uppercase tracking-widest mt-1">
+                Altere as informações cadastrais do produto no sistema
+              </p>
+            </div>
+
+            <form onSubmit={handleEditConfirm} className="space-y-4 text-left">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Código (SKU)</label>
+                  <Input
+                    placeholder="Auto-gerado se vazio"
+                    value={sku}
+                    onChange={(e) => setSku(e.target.value)}
+                    disabled
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Locação de Estoque</label>
+                  <Input
+                    placeholder="Ex: Corredor D"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1 md:col-span-2">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Nome do Produto</label>
+                  <Input
+                    placeholder="Ex: Pneu Pirelli Superbike Diablo"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Marca</label>
+                  <Input
+                    placeholder="Ex: Pirelli"
+                    value={brand}
+                    onChange={(e) => setBrand(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Categoria</label>
+                  <Input
+                    placeholder="Ex: Pneus"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Preço de Venda (R$)</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Estoque Inicial (Qtd)</label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={stockQuantity}
+                    onChange={(e) => setStockQuantity(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Estoque Mínimo (Qtd)</label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={minStock}
+                    onChange={(e) => setMinStock(e.target.value)}
+                  />
+                </div>
+                {/* Checkbox for show_in_store */}
+                <div className="flex items-center gap-2 md:col-span-2 pt-2 pb-1">
+                  <input
+                    type="checkbox"
+                    id="showInStoreEdit"
+                    checked={showInStore}
+                    onChange={(e) => setShowInStore(e.target.checked)}
+                    className="w-4 h-4 rounded border-brand-grey/25 bg-brand-input text-brand-red focus:ring-brand-red focus:ring-offset-brand-black"
+                  />
+                  <label htmlFor="showInStoreEdit" className="text-xs font-mono text-white cursor-pointer select-none uppercase tracking-wider">
+                    Disponibilizar este produto na Loja Online
+                  </label>
+                </div>
+                {/* Product Photo Upload Field */}
+                <div className="space-y-1 md:col-span-2">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Foto do Produto</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="w-full text-xs font-mono bg-brand-input border border-brand-grey/25 text-brand-grey rounded px-3 py-2 focus:outline-none focus:border-brand-red cursor-pointer file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-[10px] file:font-mono file:font-bold file:uppercase file:bg-brand-red file:text-white file:hover:bg-brand-darkred file:cursor-pointer"
+                  />
+                  {imageFile && (
+                    <p className="text-[10px] text-emerald-500 font-mono mt-1 flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" />
+                      Imagem selecionada: {imageFile.name}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-6 border-t border-brand-grey/10">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    resetForm();
+                    setSelectedProduct(null);
+                  }}
+                >
+                  CANCELAR
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Salvando...' : 'CONCLUIR'}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {/* CENTER SCREEN EDIT SUCCESS BANNER */}
+      {showEditSuccessOverlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs">
+          <div className="bg-brand-card border border-emerald-500/35 p-8 rounded shadow-2xl flex flex-col items-center gap-4 text-center max-w-sm mx-4 animate-in fade-in zoom-in-95 duration-200" style={{ borderLeft: '4px solid #10b981' }}>
+            <div className="w-12 h-12 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center text-emerald-500">
+              <Check className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-black tracking-wider uppercase text-emerald-500 leading-tight">
+              PRODUTO EDITADO COM SUCESSO!
+            </h3>
+            <p className="text-[11px] text-brand-grey leading-normal">
+              As alterações do produto foram salvas com sucesso no sistema.
             </p>
           </div>
         </div>
