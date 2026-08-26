@@ -23,6 +23,7 @@ interface Product {
   stock_quantity: number;
   category: string;
   image_url?: string;
+  min_stock_quantity?: number;
 }
 
 export default function AdminProductsPage() {
@@ -46,14 +47,15 @@ export default function AdminProductsPage() {
   const [category, setCategory] = useState('');
   const [price, setPrice] = useState('');
   const [stockQuantity, setStockQuantity] = useState('');
+  const [minStock, setMinStock] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [showInStore, setShowInStore] = useState(false);
 
   // Fallback mock catalog items
   const mockProducts: Product[] = [
-    { sku: 'ESC-GP-01', location: 'Corredor A', name: 'Escapamento Esportivo Carbon GP', brand: 'Akrapovic', price: 2450.00, stock_quantity: 12, category: 'Escapamentos' },
-    { sku: 'PST-RC-02', location: 'Gaveta B', name: 'Pastilha de Freio Sinterizada Racing', brand: 'Brembo', price: 280.00, stock_quantity: 45, category: 'Freios' },
-    { sku: 'AMR-PR-03', location: 'Corredor C', name: 'Amortecedor Traseiro Regulável PRO', brand: 'Öhlins', price: 1890.00, stock_quantity: 4, category: 'Suspensão' },
+    { sku: 'ESC-GP-01', location: 'Corredor A', name: 'Escapamento Esportivo Carbon GP', brand: 'Akrapovic', price: 2450.00, stock_quantity: 12, category: 'Escapamentos', min_stock_quantity: 5 },
+    { sku: 'PST-RC-02', location: 'Gaveta B', name: 'Pastilha de Freio Sinterizada Racing', brand: 'Brembo', price: 280.00, stock_quantity: 45, category: 'Freios', min_stock_quantity: 5 },
+    { sku: 'AMR-PR-03', location: 'Corredor C', name: 'Amortecedor Traseiro Regulável PRO', brand: 'Öhlins', price: 1890.00, stock_quantity: 4, category: 'Suspensão', min_stock_quantity: 5 },
   ];
 
   const fetchProducts = async () => {
@@ -118,6 +120,7 @@ export default function AdminProductsPage() {
     setCategory('');
     setPrice('');
     setStockQuantity('');
+    setMinStock('');
     setImageFile(null);
     setShowInStore(false);
   };
@@ -138,6 +141,7 @@ export default function AdminProductsPage() {
       const finalName = name.trim() || 'Produto Sem Nome';
       const finalPrice = parseFloat(price) || 0;
       const finalStock = parseInt(stockQuantity) || 0;
+      const finalMinStock = parseInt(minStock) || 0;
 
       // 2. Upload file to Supabase Storage if present
       let uploadedImageUrl = '';
@@ -169,6 +173,7 @@ export default function AdminProductsPage() {
           brand: brand.trim() || null,
           price: finalPrice,
           stock_quantity: finalStock,
+          min_stock_quantity: finalMinStock,
           category: category.trim() || null,
           image_url: uploadedImageUrl || null,
           show_in_store: showInStore
@@ -199,7 +204,7 @@ export default function AdminProductsPage() {
 
   const handleCancelarCadastro = () => {
     // If any field is filled, reset them
-    if (sku || location || name || brand || category || price || stockQuantity || imageFile || showInStore) {
+    if (sku || location || name || brand || category || price || stockQuantity || minStock || imageFile || showInStore) {
       resetForm();
       info('Campos Limpos', 'O formulário foi resetado para o próximo produto.');
     }
@@ -393,6 +398,15 @@ export default function AdminProductsPage() {
                     placeholder="0"
                     value={stockQuantity}
                     onChange={(e) => setStockQuantity(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Estoque Mínimo (Qtd) (Opcional)</label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={minStock}
+                    onChange={(e) => setMinStock(e.target.value)}
                   />
                 </div>
                 {/* Checkbox for show_in_store */}
