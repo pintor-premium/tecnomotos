@@ -254,13 +254,13 @@ export default function AdminProductsPage() {
 
         {/* Search Input */}
         <div className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-grey pointer-events-none" />
           <Input
             placeholder="Pesquisar por código, nome, marca ou locação..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 text-xs font-mono"
+            className="pl-9 text-xs font-mono bg-brand-input"
           />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-grey/60 pointer-events-none z-10" />
         </div>
 
         {isLoading ? (
