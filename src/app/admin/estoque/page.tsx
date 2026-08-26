@@ -107,7 +107,63 @@ export default function AdminInventoryPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* SECTION 1: PRODUCTS TO BUY */}
+          {/* SECTION 1: PRODUCTS IN STOCK */}
+          <Card className="space-y-6">
+            <div className="flex justify-between items-center border-b border-brand-grey/15 pb-4">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-white" />
+                <div>
+                  <h4 className="text-sm font-black italic uppercase tracking-tight text-white">
+                    Produtos em Estoque
+                  </h4>
+                  <p className="text-[11px] text-brand-grey mt-0.5">
+                    Inventário completo de peças e componentes da oficina
+                  </p>
+                </div>
+              </div>
+              <Badge variant="neutral" className="font-mono">
+                {products.length} {products.length === 1 ? 'PRODUTO' : 'PRODUTOS'}
+              </Badge>
+            </div>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Marca</TableHead>
+                  <TableHead>Estoque Atual</TableHead>
+                  <TableHead>Estoque Mínimo</TableHead>
+                  <TableHead className="text-right">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products.map((p, idx) => {
+                  const isCritical = p.stock_quantity <= p.min_stock_quantity;
+                  return (
+                    <TableRow key={idx}>
+                      <TableCell className="font-mono text-brand-red">{p.sku}</TableCell>
+                      <TableCell className="font-bold text-white">{p.name}</TableCell>
+                      <TableCell>{p.brand || 'Genérico'}</TableCell>
+                      <TableCell className={`font-mono ${isCritical ? 'text-red-500 font-bold' : 'text-white'}`}>
+                        {p.stock_quantity} un
+                      </TableCell>
+                      <TableCell className="font-mono text-brand-grey">{p.min_stock_quantity} un</TableCell>
+                      <TableCell className="text-right">
+                        {isCritical ? (
+                          <Badge variant="danger" className="text-[9px]">Estoque Crítico</Badge>
+                        ) : (
+                          <Badge variant="success" className="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Regular</Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </Card>
+
+          {/* SECTION 2: PRODUCTS TO BUY */}
           <Card className="space-y-6" style={{ borderLeft: '4px solid #ef4444' }}>
             <div className="flex justify-between items-center border-b border-brand-grey/15 pb-4">
               <div className="flex items-center gap-2">
@@ -164,62 +220,6 @@ export default function AdminInventoryPage() {
                 </TableBody>
               </Table>
             )}
-          </Card>
-
-          {/* SECTION 2: PRODUCTS IN STOCK */}
-          <Card className="space-y-6">
-            <div className="flex justify-between items-center border-b border-brand-grey/15 pb-4">
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-white" />
-                <div>
-                  <h4 className="text-sm font-black italic uppercase tracking-tight text-white">
-                    Produtos em Estoque
-                  </h4>
-                  <p className="text-[11px] text-brand-grey mt-0.5">
-                    Inventário completo de peças e componentes da oficina
-                  </p>
-                </div>
-              </div>
-              <Badge variant="neutral" className="font-mono">
-                {products.length} {products.length === 1 ? 'PRODUTO' : 'PRODUTOS'}
-              </Badge>
-            </div>
-
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Marca</TableHead>
-                  <TableHead>Estoque Atual</TableHead>
-                  <TableHead>Estoque Mínimo</TableHead>
-                  <TableHead className="text-right">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((p, idx) => {
-                  const isCritical = p.stock_quantity <= p.min_stock_quantity;
-                  return (
-                    <TableRow key={idx}>
-                      <TableCell className="font-mono text-brand-red">{p.sku}</TableCell>
-                      <TableCell className="font-bold text-white">{p.name}</TableCell>
-                      <TableCell>{p.brand || 'Genérico'}</TableCell>
-                      <TableCell className={`font-mono ${isCritical ? 'text-red-500 font-bold' : 'text-white'}`}>
-                        {p.stock_quantity} un
-                      </TableCell>
-                      <TableCell className="font-mono text-brand-grey">{p.min_stock_quantity} un</TableCell>
-                      <TableCell className="text-right">
-                        {isCritical ? (
-                          <Badge variant="danger" className="text-[9px]">Estoque Crítico</Badge>
-                        ) : (
-                          <Badge variant="success" className="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Regular</Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
           </Card>
         </div>
       )}
