@@ -8,9 +8,12 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/components/ui/toast';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 interface Product {
+  id?: string;
   sku: string;
   name: string;
   brand: string;
@@ -20,9 +23,12 @@ interface Product {
 }
 
 export default function PublicProductsPage() {
+  const router = useRouter();
   const supabase = createClient();
+  const { success } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Fallback mock items
   const mockProducts: Product[] = [
@@ -50,11 +56,57 @@ export default function PublicProductsPage() {
   };
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleAddToCart = (product: Product) => {
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
+
+    const cartData = localStorage.getItem('tecnomotos-cart');
+    let cart = [];
+    if (cartData) {
+      try {
+        cart = JSON.parse(cartData);
+      } catch (e) {
+        cart = [];
+      }
+    }
+
+    const existing = cart.find((item: any) => item.id === product.id);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      cart.push({
+        id: product.id,
+        sku: product.sku,
+        name: product.name,
+        price: product.price,
+        quantity: 1,
+        image_url: product.image_url
+      });
+    }
+
+    localStorage.setItem('tecnomotos-cart', JSON.stringify(cart));
+    success('Produto adicionado', `${product.name} foi adicionado ao carrinho!`);
+  };
+
+  useEffect(() => {
     async function loadProducts() {
       try {
         const { data, error } = await supabase
           .from('products')
-          .select('sku, name, brand, price, category, image_url')
+          .select('id, sku, name, brand, price, category, image_url')
           .eq('show_in_store', true)
           .order('created_at', { ascending: false });
 
@@ -74,7 +126,7 @@ export default function PublicProductsPage() {
     }
 
     loadProducts();
-  }, []);
+  }, [isAuthenticated]);
 
   return (
     <div className="flex flex-col min-h-screen bg-brand-black text-white">
@@ -144,8 +196,13 @@ export default function PublicProductsPage() {
                             R$ {p.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
                         </div>
-                        <Button variant="secondary" size="sm" className="w-full" href="/login">
-                          Comprar
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="w-full font-bold"
+                          onClick={() => handleAddToCart(p)}
+                        >
+                          Adicionar ao Carrinho
                         </Button>
                       </div>
                     </div>

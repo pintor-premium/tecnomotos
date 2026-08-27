@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useToast } from '@/components/ui/toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldAlert, X, Check, Image as ImageIcon, Search } from 'lucide-react';
+import { ShieldAlert, X, Check, Image as ImageIcon, Search, RefreshCw } from 'lucide-react';
 
 interface Product {
   id?: string;
@@ -25,6 +25,11 @@ interface Product {
   image_url?: string;
   min_stock_quantity?: number;
   show_in_store?: boolean;
+  stripe_product_id?: string | null;
+  stripe_price_id?: string | null;
+  stripe_sync_status?: string | null;
+  stripe_sync_error?: string | null;
+  stripe_last_synced_at?: string | null;
 }
 
 export default function AdminProductsPage() {
@@ -54,6 +59,46 @@ export default function AdminProductsPage() {
   const [minStock, setMinStock] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [showInStore, setShowInStore] = useState(false);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
+
+  const handleSyncPending = async () => {
+    setIsSyncingAll(true);
+    info('Sincronizando', 'Iniciando sincronização de produtos pendentes com o Stripe...');
+    try {
+      const res = await fetch('/api/admin/stripe-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ syncAllPending: true })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Falha ao sincronizar');
+
+      success('Sincronizado', `${data.syncedCount} produtos pendentes foram sincronizados com sucesso.`);
+      await fetchProducts();
+    } catch (e: any) {
+      error('Erro ao sincronizar', e.message || 'Erro inesperado.');
+    } finally {
+      setIsSyncingAll(false);
+    }
+  };
+
+  const handleSyncSingle = async (productId: string) => {
+    info('Sincronizando', 'Sincronizando produto com o Stripe...');
+    try {
+      const res = await fetch('/api/admin/stripe-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Falha ao sincronizar');
+
+      success('Sincronizado', 'Produto sincronizado com sucesso no Stripe.');
+      await fetchProducts();
+    } catch (e: any) {
+      error('Erro ao sincronizar', e.message || 'Erro inesperado.');
+    }
+  };
 
   // Fallback mock catalog items
   const mockProducts: Product[] = [
@@ -168,7 +213,7 @@ export default function AdminProductsPage() {
       }
 
       // 3. Save product to Supabase DB products table
-      const { error: insertError } = await supabase
+      const { data: insertedData, error: insertError } = await supabase
         .from('products')
         .insert({
           sku: finalSku,
@@ -181,9 +226,20 @@ export default function AdminProductsPage() {
           category: category.trim() || null,
           image_url: uploadedImageUrl || null,
           show_in_store: showInStore
-        });
+        })
+        .select('id')
+        .single();
 
       if (insertError) throw insertError;
+
+      // Trigger Stripe sync asynchronously in background
+      if (insertedData?.id) {
+        fetch('/api/admin/stripe-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: insertedData.id })
+        }).catch(e => console.warn('Failed to auto-sync to Stripe:', e));
+      }
 
       // Reset form fields
       resetForm();
@@ -279,6 +335,15 @@ export default function AdminProductsPage() {
 
       if (updateError) throw updateError;
 
+      // Trigger Stripe sync asynchronously in background
+      if (selectedProduct?.id) {
+        fetch('/api/admin/stripe-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: selectedProduct.id })
+        }).catch(e => console.warn('Failed to auto-sync edit to Stripe:', e));
+      }
+
       // Close modal and reset fields
       setIsEditModalOpen(false);
       resetForm();
@@ -340,7 +405,17 @@ export default function AdminProductsPage() {
             <p className="text-[11px] text-brand-grey mt-0.5">Módulo estruturado integrado ao banco de dados.</p>
           </div>
           {isOwner ? (
-            <Button size="sm" onClick={() => setIsModalOpen(true)}>Novo Produto</Button>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleSyncPending}
+                disabled={isSyncingAll}
+              >
+                {isSyncingAll ? 'Sincronizando...' : 'Sincronizar Pendentes'}
+              </Button>
+              <Button size="sm" onClick={() => setIsModalOpen(true)}>Novo Produto</Button>
+            </div>
           ) : (
             <div className="flex items-center gap-2 text-brand-grey text-xs font-mono bg-brand-darkgrey p-2 border border-brand-grey/10">
               <ShieldAlert className="w-4 h-4 text-brand-red" />
@@ -376,6 +451,7 @@ export default function AdminProductsPage() {
                 <TableHead>Marca</TableHead>
                 <TableHead>Preço Venda</TableHead>
                 <TableHead>Estoque</TableHead>
+                <TableHead>Stripe</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -393,6 +469,36 @@ export default function AdminProductsPage() {
                     R$ {p.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </TableCell>
                   <TableCell className="font-mono">{p.stock_quantity} un</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {p.stripe_sync_status === 'synced' && (
+                        <Badge variant="success" className="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Sincronizado</Badge>
+                      )}
+                      {p.stripe_sync_status === 'syncing' && (
+                        <Badge variant="neutral" className="text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/20 animate-pulse">Sincronizando</Badge>
+                      )}
+                      {p.stripe_sync_status === 'error' && (
+                        <div className="group relative inline-block cursor-help">
+                          <Badge variant="danger" className="text-[9px]">Erro</Badge>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block w-48 bg-brand-card border border-brand-grey/25 text-[10px] text-brand-grey p-2 rounded shadow-lg z-50">
+                            {p.stripe_sync_error || 'Erro desconhecido'}
+                          </div>
+                        </div>
+                      )}
+                      {(!p.stripe_sync_status || p.stripe_sync_status === 'pending') && (
+                        <Badge variant="neutral" className="text-[9px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">Pendente</Badge>
+                      )}
+                      {isOwner && p.id && (
+                        <button
+                          onClick={() => handleSyncSingle(p.id!)}
+                          title="Sincronizar com Stripe"
+                          className="p-1 hover:text-brand-red text-brand-grey transition-colors"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-right">
                     {isOwner ? (
                       <Button variant="secondary" size="sm" onClick={() => handleOpenEdit(p)}>
