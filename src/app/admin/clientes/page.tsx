@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useToast } from '@/components/ui/toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { createCustomerAction } from './actions';
+import { createCustomerAction, deleteCustomerAction } from './actions';
 import {
   User,
   Plus,
@@ -330,6 +330,19 @@ export default function AdminCustomersPage() {
     }
   };
 
+  const handleDeleteCustomer = async (cust: ProfileCustomer) => {
+    if (!confirm(`Deseja excluir o cadastro de ${cust.full_name}?`)) return;
+
+    const res = await deleteCustomerAction(cust.id);
+    if (!res.success) {
+      error('Erro ao excluir', res.error || 'Falha ao excluir cadastro do cliente.');
+      return;
+    }
+
+    success('Cliente ExcluÃ­do', 'Cadastro removido com sucesso.');
+    await fetchCustomers();
+  };
+
   // Manage Addresses Actions
   const resetAddressForm = () => {
     setAddrStreet('');
@@ -613,9 +626,31 @@ export default function AdminCustomersPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="secondary" size="sm" onClick={() => handleOpenDetails(c)}>
-                      Ver Perfil
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button variant="secondary" size="sm" onClick={() => handleOpenDetails(c)}>
+                        Ver Perfil
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDetails(c)}
+                        className="p-2 text-brand-grey hover:text-white transition-colors"
+                        title="Editar cliente"
+                        aria-label={`Editar cliente ${c.full_name}`}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      {isOwner && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCustomer(c)}
+                          className="p-2 text-brand-grey hover:text-brand-red transition-colors"
+                          title="Excluir cliente"
+                          aria-label={`Excluir cliente ${c.full_name}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

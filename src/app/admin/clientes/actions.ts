@@ -91,3 +91,38 @@ export async function createCustomerAction(input: CreateCustomerInput) {
     return { success: false, error: err instanceof Error ? err.message : 'Erro inesperado ao cadastrar cliente.' };
   }
 }
+
+export async function deleteCustomerAction(customerId: string) {
+  try {
+    const supabaseServer = await createClient();
+
+    const { data: { user: currentUser } } = await supabaseServer.auth.getUser();
+    if (!currentUser) {
+      return { success: false, error: 'NÃ£o autorizado.' };
+    }
+
+    const { data: isOwner } = await supabaseServer.rpc('is_owner', {
+      user_uuid: currentUser.id
+    });
+
+    if (!isOwner) {
+      return { success: false, error: 'VocÃª nÃ£o tem permissÃ£o para excluir clientes.' };
+    }
+
+    if (currentUser.id === customerId) {
+      return { success: false, error: 'VocÃª nÃ£o pode excluir o prÃ³prio cadastro.' };
+    }
+
+    const adminClient = createAdminClient();
+    const { error: deleteError } = await adminClient.auth.admin.deleteUser(customerId);
+
+    if (deleteError) {
+      return { success: false, error: deleteError.message };
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('[deleteCustomerAction] Unexpected error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Erro inesperado ao excluir cliente.' };
+  }
+}
