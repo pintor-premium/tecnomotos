@@ -161,20 +161,20 @@ export default function AdminWorkshopPage() {
           total_price,
           notes,
           created_at,
-          customer: customer_id (
+          customer:customers!service_orders_customer_id_fkey (
             id,
-            profiles: id (
+            profiles!customers_id_fkey (
               full_name
             )
           ),
-          vehicle: vehicle_id (
+          vehicle:customer_vehicles!service_orders_vehicle_id_fkey (
             brand,
             model,
             plate
           ),
-          employee: employee_id (
+          employee:employees!service_orders_employee_id_fkey (
             id,
-            profiles: id (
+            profiles!employees_id_fkey (
               full_name
             )
           )
