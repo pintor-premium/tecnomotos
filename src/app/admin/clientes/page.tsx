@@ -126,6 +126,9 @@ export default function AdminCustomersPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isVehicleFormOpen, setIsVehicleFormOpen] = useState(false);
   const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
+  const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null);
+  const [deleteVehicleSaving, setDeleteVehicleSaving] = useState(false);
+  const [showVehicleDeleteSuccessOverlay, setShowVehicleDeleteSuccessOverlay] = useState(false);
   const [vehBrand, setVehBrand] = useState('');
   const [vehModel, setVehModel] = useState('');
   const [vehYear, setVehYear] = useState('');
@@ -580,18 +583,26 @@ export default function AdminCustomersPage() {
     setIsVehicleFormOpen(true);
   };
 
-  const handleDeleteVehicle = async (id: string) => {
+  const handleDeleteVehicle = async () => {
     if (!selectedCustomer) return;
-    if (!confirm('Deseja desvincular esta moto do cliente?')) return;
+    if (!vehicleToDelete) return;
+
+    const deletingVehicle = vehicleToDelete;
+    setVehicleToDelete(null);
+    setDeleteVehicleSaving(true);
 
     try {
       const { error: err } = await supabase
         .from('customer_vehicles')
         .delete()
-        .eq('id', id);
+        .eq('id', deletingVehicle.id);
       if (err) throw err;
 
-      success('Moto Excluída', 'Moto desvinculada.');
+      setVehicles((current) => current.filter((vehicle) => vehicle.id !== deletingVehicle.id));
+      setShowVehicleDeleteSuccessOverlay(true);
+      setTimeout(() => {
+        setShowVehicleDeleteSuccessOverlay(false);
+      }, 2500);
       // Reload
       const { data: vehs } = await supabase
         .from('customer_vehicles')
@@ -601,6 +612,8 @@ export default function AdminCustomersPage() {
       setVehicles(vehs || []);
     } catch (err: any) {
       error('Erro ao Excluir', err.message);
+    } finally {
+      setDeleteVehicleSaving(false);
     }
   };
 
@@ -767,6 +780,55 @@ export default function AdminCustomersPage() {
             </h3>
             <p className="text-[11px] text-brand-grey leading-normal">
               O cadastro do cliente foi removido do banco de dados.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* VEHICLE DELETE CONFIRMATION MODAL */}
+      {vehicleToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs">
+          <Card className="w-full max-w-md mx-4 relative p-6 space-y-6 text-center" withStripe>
+            <div className="mx-auto w-12 h-12 bg-brand-red/10 border border-brand-red/30 rounded-full flex items-center justify-center text-brand-red">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-black uppercase tracking-wider text-white leading-tight">
+              TEM CERTEZA QUE DESEJA EXCLUIR ESTA MOTOCICLETA?
+            </h3>
+            <div className="flex justify-center gap-3 pt-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setVehicleToDelete(null)}
+                disabled={deleteVehicleSaving}
+              >
+                CANCELAR
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleDeleteVehicle}
+                disabled={deleteVehicleSaving}
+              >
+                {deleteVehicleSaving ? 'EXCLUINDO...' : 'EXCLUIR'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* VEHICLE DELETE SUCCESS OVERLAY */}
+      {showVehicleDeleteSuccessOverlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs">
+          <div className="bg-brand-card border border-emerald-500/35 p-8 rounded shadow-2xl flex flex-col items-center gap-4 text-center max-w-sm mx-4 animate-in fade-in zoom-in-95 duration-200" style={{ borderLeft: '4px solid #10b981' }}>
+            <div className="w-12 h-12 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center text-emerald-500">
+              <Check className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-black tracking-wider uppercase text-emerald-500 leading-tight">
+              MOTOCICLETA EXCLU&Iacute;DA COM SUCESSO!
+            </h3>
+            <p className="text-[11px] text-brand-grey leading-normal">
+              A motocicleta foi removida do banco de dados.
             </p>
           </div>
         </div>
@@ -1281,7 +1343,7 @@ export default function AdminCustomersPage() {
                               <button onClick={() => handleEditVehicle(veh)} className="p-1 hover:text-white text-brand-grey transition-colors">
                                 <Edit className="w-4 h-4" />
                               </button>
-                              <button onClick={() => handleDeleteVehicle(veh.id)} className="p-1 hover:text-brand-red text-brand-grey transition-colors">
+                              <button onClick={() => setVehicleToDelete(veh)} className="p-1 hover:text-brand-red text-brand-grey transition-colors">
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
