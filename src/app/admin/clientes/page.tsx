@@ -98,6 +98,9 @@ export default function AdminCustomersPage() {
   const [activeTab, setActiveTab] = useState<'info' | 'addresses' | 'vehicles'>('info');
   const [detailSaving, setDetailSaving] = useState(false);
   const [showEditSuccessOverlay, setShowEditSuccessOverlay] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<ProfileCustomer | null>(null);
+  const [deleteSaving, setDeleteSaving] = useState(false);
+  const [showDeleteSuccessOverlay, setShowDeleteSuccessOverlay] = useState(false);
 
   // Edit Customer Profile states
   const [eName, setEName] = useState('');
@@ -277,6 +280,16 @@ export default function AdminCustomersPage() {
       .eq('customer_id', cust.id)
       .order('is_default', { ascending: false });
     setAddresses(addrs || []);
+    const primaryAddress = addrs?.[0];
+    setEditingAddressId(primaryAddress?.id || null);
+    setAddrStreet(primaryAddress?.street || '');
+    setAddrNumber(primaryAddress?.number || '');
+    setAddrComplement(primaryAddress?.complement || '');
+    setAddrNeighborhood(primaryAddress?.neighborhood || '');
+    setAddrCity(primaryAddress?.city || '');
+    setAddrState(primaryAddress?.state || '');
+    setAddrPostalCode(primaryAddress?.postal_code || '');
+    setAddrIsDefault(primaryAddress?.is_default || false);
 
     // Fetch vehicles
     const { data: vehs } = await supabase
@@ -316,10 +329,42 @@ export default function AdminCustomersPage() {
 
       if (custErr) throw custErr;
 
+      const hasAddressData = addrStreet || addrNumber || addrComplement || addrNeighborhood || addrCity || addrState || addrPostalCode;
+
+      if (hasAddressData) {
+        const addressPayload = {
+          customer_id: selectedCustomer.id,
+          street: addrStreet,
+          number: addrNumber,
+          complement: addrComplement,
+          neighborhood: addrNeighborhood,
+          city: addrCity,
+          state: addrState.toUpperCase(),
+          postal_code: addrPostalCode,
+          is_default: true
+        };
+
+        if (editingAddressId) {
+          const { error: addrErr } = await supabase
+            .from('customer_addresses')
+            .update(addressPayload)
+            .eq('id', editingAddressId);
+
+          if (addrErr) throw addrErr;
+        } else {
+          const { error: addrErr } = await supabase
+            .from('customer_addresses')
+            .insert(addressPayload);
+
+          if (addrErr) throw addrErr;
+        }
+      }
+
       setShowEditSuccessOverlay(true);
       setTimeout(() => {
         setShowEditSuccessOverlay(false);
         setIsDetailModalOpen(false);
+        resetAddressForm();
       }, 2500);
 
       await fetchCustomers();
@@ -330,16 +375,23 @@ export default function AdminCustomersPage() {
     }
   };
 
-  const handleDeleteCustomer = async (cust: ProfileCustomer) => {
-    if (!confirm(`Deseja excluir o cadastro de ${cust.full_name}?`)) return;
+  const handleDeleteCustomer = async () => {
+    if (!customerToDelete) return;
 
-    const res = await deleteCustomerAction(cust.id);
+    setDeleteSaving(true);
+    const res = await deleteCustomerAction(customerToDelete.id);
+    setDeleteSaving(false);
     if (!res.success) {
       error('Erro ao excluir', res.error || 'Falha ao excluir cadastro do cliente.');
       return;
     }
 
-    success('Cliente ExcluÃ­do', 'Cadastro removido com sucesso.');
+    setCustomers((current) => current.filter((customer) => customer.id !== customerToDelete.id));
+    setCustomerToDelete(null);
+    setShowDeleteSuccessOverlay(true);
+    setTimeout(() => {
+      setShowDeleteSuccessOverlay(false);
+    }, 2500);
     await fetchCustomers();
   };
 
@@ -642,7 +694,7 @@ export default function AdminCustomersPage() {
                       {isOwner && (
                         <button
                           type="button"
-                          onClick={() => handleDeleteCustomer(c)}
+                          onClick={() => setCustomerToDelete(c)}
                           className="p-2 text-brand-grey hover:text-brand-red transition-colors"
                           title="Excluir cliente"
                           aria-label={`Excluir cliente ${c.full_name}`}
@@ -658,6 +710,55 @@ export default function AdminCustomersPage() {
           </Table>
         )}
       </Card>
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {customerToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs">
+          <Card className="w-full max-w-md mx-4 relative p-6 space-y-6 text-center" withStripe>
+            <div className="mx-auto w-12 h-12 bg-brand-red/10 border border-brand-red/30 rounded-full flex items-center justify-center text-brand-red">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-black uppercase tracking-wider text-white leading-tight">
+              TEM CERTEZA QUE DESEJA EXCLUIR ESTE CLIENTE?
+            </h3>
+            <div className="flex justify-center gap-3 pt-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setCustomerToDelete(null)}
+                disabled={deleteSaving}
+              >
+                CANCELAR
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleDeleteCustomer}
+                disabled={deleteSaving}
+              >
+                {deleteSaving ? 'EXCLUINDO...' : 'EXCLUIR'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* DELETE SUCCESS OVERLAY */}
+      {showDeleteSuccessOverlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs">
+          <div className="bg-brand-card border border-emerald-500/35 p-8 rounded shadow-2xl flex flex-col items-center gap-4 text-center max-w-sm mx-4 animate-in fade-in zoom-in-95 duration-200" style={{ borderLeft: '4px solid #10b981' }}>
+            <div className="w-12 h-12 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center text-emerald-500">
+              <Check className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-black tracking-wider uppercase text-emerald-500 leading-tight">
+              CLIENTE EXCLU&Iacute;DO COM SUCESSO!
+            </h3>
+            <p className="text-[11px] text-brand-grey leading-normal">
+              O cadastro do cliente foi removido do banco de dados.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* CREATE MODAL */}
       {isCreateModalOpen && (
@@ -941,6 +1042,71 @@ export default function AdminCustomersPage() {
                       <option value="INACTIVE">INATIVO</option>
                       <option value="BLOCKED">BLOQUEADO</option>
                     </select>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-2">
+                  <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-brand-red border-b border-brand-grey/10 pb-1">
+                    Endereco Primario
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="text-[10px] font-mono text-brand-grey uppercase">Logradouro / Rua</label>
+                      <Input
+                        placeholder="Ex: Av. Brasil"
+                        value={addrStreet}
+                        onChange={(e) => setAddrStreet(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono text-brand-grey uppercase">Numero</label>
+                      <Input
+                        placeholder="Ex: 123"
+                        value={addrNumber}
+                        onChange={(e) => setAddrNumber(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono text-brand-grey uppercase">Complemento</label>
+                      <Input
+                        placeholder="Ex: Apto 2"
+                        value={addrComplement}
+                        onChange={(e) => setAddrComplement(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono text-brand-grey uppercase">Bairro</label>
+                      <Input
+                        placeholder="Ex: Centro"
+                        value={addrNeighborhood}
+                        onChange={(e) => setAddrNeighborhood(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono text-brand-grey uppercase">Cidade</label>
+                      <Input
+                        placeholder="Ex: Tangara da Serra"
+                        value={addrCity}
+                        onChange={(e) => setAddrCity(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono text-brand-grey uppercase">Estado (UF)</label>
+                      <Input
+                        placeholder="Ex: MT"
+                        maxLength={2}
+                        value={addrState}
+                        onChange={(e) => setAddrState(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono text-brand-grey uppercase">CEP</label>
+                      <Input
+                        placeholder="Somente numeros"
+                        value={addrPostalCode}
+                        onChange={(e) => setAddrPostalCode(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
 
