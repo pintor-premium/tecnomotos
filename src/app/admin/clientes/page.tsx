@@ -378,16 +378,17 @@ export default function AdminCustomersPage() {
   const handleDeleteCustomer = async () => {
     if (!customerToDelete) return;
 
+    const deletingCustomer = customerToDelete;
+    setCustomerToDelete(null);
     setDeleteSaving(true);
-    const res = await deleteCustomerAction(customerToDelete.id);
+    const res = await deleteCustomerAction(deletingCustomer.id);
     setDeleteSaving(false);
     if (!res.success) {
       error('Erro ao excluir', res.error || 'Falha ao excluir cadastro do cliente.');
       return;
     }
 
-    setCustomers((current) => current.filter((customer) => customer.id !== customerToDelete.id));
-    setCustomerToDelete(null);
+    setCustomers((current) => current.filter((customer) => customer.id !== deletingCustomer.id));
     setShowDeleteSuccessOverlay(true);
     setTimeout(() => {
       setShowDeleteSuccessOverlay(false);
