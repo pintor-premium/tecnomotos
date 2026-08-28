@@ -148,15 +148,26 @@ export default function AdminCustomersPage() {
           customers (
             document,
             birth_date
+          ),
+          user_roles (
+            roles (
+              name
+            )
           )
         `)
         .order('full_name');
 
       if (fetchErr) throw fetchErr;
 
-      // Filter out internal employees if any, but since RBAC user_roles handles it, we fetch all profiles that have customer details or show them all
-      // For workshop, we display all profiles as potential customers
-      const formatted = (data || []).map((item: any) => ({
+      const formatted = (data || [])
+        .filter((item: any) => {
+          const userRoles = Array.isArray(item.user_roles) ? item.user_roles : [];
+          return !userRoles.some((userRole: any) => {
+            const role = Array.isArray(userRole.roles) ? userRole.roles[0] : userRole.roles;
+            return role?.name === 'OWNER';
+          });
+        })
+        .map((item: any) => ({
         id: item.id,
         full_name: item.full_name,
         email: item.email,
