@@ -24,7 +24,10 @@ import {
   AlertTriangle,
   Play,
   CheckSquare,
-  Slash
+  Slash,
+  Camera,
+  ImageIcon,
+  Trash2
 } from 'lucide-react';
 
 interface ServiceOrder {
@@ -68,6 +71,38 @@ interface MechanicOption {
   full_name: string;
 }
 
+type ChecklistStatus = 'OK' | 'ATTENTION' | 'DAMAGED' | 'NOT_APPLICABLE';
+
+interface ChecklistItem {
+  id?: string;
+  label: string;
+  status: ChecklistStatus;
+  notes: string;
+  sort_order: number;
+}
+
+interface ServiceOrderPhoto {
+  id: string;
+  service_order_id: string;
+  image_url: string;
+  storage_path: string;
+  caption: string | null;
+  created_at: string;
+}
+
+const DEFAULT_CHECKLIST_ITEMS: ChecklistItem[] = [
+  { label: 'Carenagens e pintura', status: 'OK', notes: '', sort_order: 1 },
+  { label: 'Retrovisores', status: 'OK', notes: '', sort_order: 2 },
+  { label: 'Manetes e pedais', status: 'OK', notes: '', sort_order: 3 },
+  { label: 'Pneus e rodas', status: 'OK', notes: '', sort_order: 4 },
+  { label: 'Freios', status: 'OK', notes: '', sort_order: 5 },
+  { label: 'Corrente, coroa e pinhao', status: 'OK', notes: '', sort_order: 6 },
+  { label: 'Luzes, setas e painel', status: 'OK', notes: '', sort_order: 7 },
+  { label: 'Vazamentos aparentes', status: 'OK', notes: '', sort_order: 8 },
+  { label: 'Nivel de combustivel', status: 'OK', notes: '', sort_order: 9 },
+  { label: 'Acessorios e bau', status: 'OK', notes: '', sort_order: 10 }
+];
+
 export default function AdminWorkshopPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -95,6 +130,8 @@ export default function AdminWorkshopPage() {
   const [description, setDescription] = useState('');
   const [totalPrice, setTotalPrice] = useState('');
   const [notes, setNotes] = useState('');
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>(DEFAULT_CHECKLIST_ITEMS);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
 
   // Edit / Details Modal States
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -105,6 +142,9 @@ export default function AdminWorkshopPage() {
   const [eDescription, setEDescription] = useState('');
   const [eTotalPrice, setETotalPrice] = useState('');
   const [eNotes, setENotes] = useState('');
+  const [eChecklistItems, setEChecklistItems] = useState<ChecklistItem[]>([]);
+  const [serviceOrderPhotos, setServiceOrderPhotos] = useState<ServiceOrderPhoto[]>([]);
+  const [newPhotoFiles, setNewPhotoFiles] = useState<File[]>([]);
 
   const fetchServiceOrders = async () => {
     try {
@@ -279,6 +319,51 @@ export default function AdminWorkshopPage() {
     fetchCustomerVehicles();
   }, [selectedCustId]);
 
+  const updateChecklistItem = (
+    setter: React.Dispatch<React.SetStateAction<ChecklistItem[]>>,
+    index: number,
+    field: 'status' | 'notes',
+    value: string
+  ) => {
+    setter((current) => current.map((item, itemIndex) => (
+      itemIndex === index ? { ...item, [field]: field === 'status' ? value as ChecklistStatus : value } : item
+    )));
+  };
+
+  const uploadServiceOrderPhotos = async (serviceOrderId: string, files: File[]) => {
+    if (files.length === 0) return;
+
+    const photoRows = [];
+    for (const file of files) {
+      const fileExt = file.name.split('.').pop() || 'jpg';
+      const safeName = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9.-]/g, '-');
+      const filePath = `${serviceOrderId}/${Date.now()}-${Math.random().toString(36).slice(2)}-${safeName}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('service-order-photos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('service-order-photos')
+        .getPublicUrl(filePath);
+
+      photoRows.push({
+        service_order_id: serviceOrderId,
+        image_url: urlData.publicUrl,
+        storage_path: filePath,
+        caption: file.name
+      });
+    }
+
+    const { error: photoErr } = await supabase
+      .from('service_order_photos')
+      .insert(photoRows);
+
+    if (photoErr) throw photoErr;
+  };
+
   const resetCreateForm = () => {
     setSelectedCustId('');
     setSelectedVehId('');
@@ -287,6 +372,8 @@ export default function AdminWorkshopPage() {
     setDescription('');
     setTotalPrice('');
     setNotes('');
+    setChecklistItems(DEFAULT_CHECKLIST_ITEMS);
+    setPhotoFiles([]);
   };
 
   const handleConfirmCreate = async (e: React.FormEvent) => {
@@ -298,7 +385,7 @@ export default function AdminWorkshopPage() {
 
     setIsSaving(true);
     try {
-      const { error: insErr } = await supabase
+      const { data: insertedOrder, error: insErr } = await supabase
         .from('service_orders')
         .insert({
           customer_id: selectedCustId,
@@ -309,9 +396,26 @@ export default function AdminWorkshopPage() {
           total_price: parseFloat(totalPrice) || 0.00,
           notes: notes || null,
           status: 'PENDING'
-        });
+        })
+        .select('id')
+        .single();
 
       if (insErr) throw insErr;
+
+      const orderId = insertedOrder.id;
+      const { error: checklistErr } = await supabase
+        .from('service_order_checklist_items')
+        .insert(checklistItems.map((item) => ({
+          service_order_id: orderId,
+          label: item.label,
+          status: item.status,
+          notes: item.notes || null,
+          sort_order: item.sort_order
+        })));
+
+      if (checklistErr) throw checklistErr;
+
+      await uploadServiceOrderPhotos(orderId, photoFiles);
 
       resetCreateForm();
       setIsCreateModalOpen(false);
@@ -336,14 +440,40 @@ export default function AdminWorkshopPage() {
   };
 
   // Details & Status Actions
-  const handleOpenDetails = (so: ServiceOrder) => {
+  const handleOpenDetails = async (so: ServiceOrder) => {
     setSelectedSO(so);
     setEMechId(so.employee_id || '');
     setEServiceType(so.service_type);
     setEDescription(so.description || '');
     setETotalPrice(so.total_price.toString());
     setENotes(so.notes || '');
+    setNewPhotoFiles([]);
     setIsDetailModalOpen(true);
+
+    const { data: checklist } = await supabase
+      .from('service_order_checklist_items')
+      .select('id, label, status, notes, sort_order')
+      .eq('service_order_id', so.id)
+      .order('sort_order', { ascending: true });
+
+    setEChecklistItems((checklist || []).length > 0
+      ? (checklist || []).map((item: any) => ({
+          id: item.id,
+          label: item.label,
+          status: item.status as ChecklistStatus,
+          notes: item.notes || '',
+          sort_order: item.sort_order
+        }))
+      : DEFAULT_CHECKLIST_ITEMS
+    );
+
+    const { data: photos } = await supabase
+      .from('service_order_photos')
+      .select('id, service_order_id, image_url, storage_path, caption, created_at')
+      .eq('service_order_id', so.id)
+      .order('created_at', { ascending: false });
+
+    setServiceOrderPhotos(photos || []);
   };
 
   const handleUpdateSO = async (e: React.FormEvent) => {
@@ -364,6 +494,27 @@ export default function AdminWorkshopPage() {
 
       if (err) throw err;
 
+      const { error: deleteChecklistErr } = await supabase
+        .from('service_order_checklist_items')
+        .delete()
+        .eq('service_order_id', selectedSO.id);
+
+      if (deleteChecklistErr) throw deleteChecklistErr;
+
+      const { error: checklistErr } = await supabase
+        .from('service_order_checklist_items')
+        .insert(eChecklistItems.map((item) => ({
+          service_order_id: selectedSO.id,
+          label: item.label,
+          status: item.status,
+          notes: item.notes || null,
+          sort_order: item.sort_order
+        })));
+
+      if (checklistErr) throw checklistErr;
+
+      await uploadServiceOrderPhotos(selectedSO.id, newPhotoFiles);
+
       setIsDetailModalOpen(false);
       setShowEditSuccessOverlay(true);
       setTimeout(() => {
@@ -373,6 +524,28 @@ export default function AdminWorkshopPage() {
       await fetchServiceOrders();
     } catch (err: any) {
       error('Erro de Atualização', err.message);
+    }
+  };
+
+  const handleDeletePhoto = async (photo: ServiceOrderPhoto) => {
+    try {
+      const { error: storageErr } = await supabase.storage
+        .from('service-order-photos')
+        .remove([photo.storage_path]);
+
+      if (storageErr) throw storageErr;
+
+      const { error: deleteErr } = await supabase
+        .from('service_order_photos')
+        .delete()
+        .eq('id', photo.id);
+
+      if (deleteErr) throw deleteErr;
+
+      setServiceOrderPhotos((current) => current.filter((item) => item.id !== photo.id));
+      success('Foto Excluida', 'Registro fotografico removido.');
+    } catch (err: any) {
+      error('Erro ao excluir foto', err.message);
     }
   };
 
@@ -651,6 +824,52 @@ export default function AdminWorkshopPage() {
                     className="w-full text-xs font-mono bg-brand-input border border-brand-grey/25 text-white rounded px-3 py-2 focus:outline-none focus:border-brand-red"
                   />
                 </div>
+                <div className="space-y-3 md:col-span-2 border-t border-brand-grey/10 pt-4">
+                  <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                    <ClipboardList className="w-4 h-4 text-brand-red" /> Checklist de Entrada
+                  </h4>
+                  <div className="space-y-2">
+                    {checklistItems.map((item, index) => (
+                      <div key={item.label} className="grid grid-cols-1 md:grid-cols-[1fr_150px_1.3fr] gap-2 items-center bg-brand-input/50 border border-brand-grey/10 rounded p-2">
+                        <span className="text-xs font-mono text-white">{item.label}</span>
+                        <select
+                          value={item.status}
+                          onChange={(e) => updateChecklistItem(setChecklistItems, index, 'status', e.target.value)}
+                          className="w-full text-[10px] font-mono bg-brand-black border border-brand-grey/25 text-white rounded px-2 py-2 focus:outline-none focus:border-brand-red"
+                        >
+                          <option value="OK">OK</option>
+                          <option value="ATTENTION">ATENCAO</option>
+                          <option value="DAMAGED">AVARIADO</option>
+                          <option value="NOT_APPLICABLE">NAO APLICA</option>
+                        </select>
+                        <Input
+                          placeholder="Observacao"
+                          value={item.notes}
+                          onChange={(e) => updateChecklistItem(setChecklistItems, index, 'notes', e.target.value)}
+                          className="text-[10px]"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3 md:col-span-2 border-t border-brand-grey/10 pt-4">
+                  <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-brand-red" /> Fotos da Motocicleta
+                  </h4>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => setPhotoFiles(Array.from(e.target.files || []))}
+                    className="text-xs font-mono bg-brand-input"
+                  />
+                  {photoFiles.length > 0 && (
+                    <div className="text-[10px] font-mono text-brand-grey">
+                      {photoFiles.length} foto(s) selecionada(s) para registro de entrada.
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Action Buttons */}
@@ -842,6 +1061,73 @@ export default function AdminWorkshopPage() {
                     onChange={(e) => setENotes(e.target.value)}
                     className="w-full text-xs font-mono bg-brand-input border border-brand-grey/25 text-white rounded px-3 py-2 focus:outline-none focus:border-brand-red"
                   />
+                </div>
+                <div className="space-y-3 md:col-span-2 border-t border-brand-grey/10 pt-4">
+                  <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                    <ClipboardList className="w-4 h-4 text-brand-red" /> Checklist de Entrada
+                  </h4>
+                  <div className="space-y-2">
+                    {eChecklistItems.map((item, index) => (
+                      <div key={`${item.label}-${index}`} className="grid grid-cols-1 md:grid-cols-[1fr_150px_1.3fr] gap-2 items-center bg-brand-input/50 border border-brand-grey/10 rounded p-2">
+                        <span className="text-xs font-mono text-white">{item.label}</span>
+                        <select
+                          value={item.status}
+                          onChange={(e) => updateChecklistItem(setEChecklistItems, index, 'status', e.target.value)}
+                          className="w-full text-[10px] font-mono bg-brand-black border border-brand-grey/25 text-white rounded px-2 py-2 focus:outline-none focus:border-brand-red"
+                        >
+                          <option value="OK">OK</option>
+                          <option value="ATTENTION">ATENCAO</option>
+                          <option value="DAMAGED">AVARIADO</option>
+                          <option value="NOT_APPLICABLE">NAO APLICA</option>
+                        </select>
+                        <Input
+                          placeholder="Observacao"
+                          value={item.notes}
+                          onChange={(e) => updateChecklistItem(setEChecklistItems, index, 'notes', e.target.value)}
+                          className="text-[10px]"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3 md:col-span-2 border-t border-brand-grey/10 pt-4">
+                  <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-brand-red" /> Fotos Registradas
+                  </h4>
+                  {serviceOrderPhotos.length === 0 ? (
+                    <div className="py-4 text-center text-brand-grey font-mono text-xs border border-brand-grey/10 rounded bg-brand-input/20">
+                      Nenhuma foto registrada para esta ordem.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {serviceOrderPhotos.map((photo) => (
+                        <div key={photo.id} className="relative border border-brand-grey/15 rounded overflow-hidden bg-brand-input">
+                          <img src={photo.image_url} alt={photo.caption || 'Foto da motocicleta'} className="w-full h-28 object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePhoto(photo)}
+                            className="absolute top-2 right-2 p-1.5 bg-black/70 border border-brand-grey/20 text-brand-grey hover:text-brand-red transition-colors"
+                            aria-label="Excluir foto"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => setNewPhotoFiles(Array.from(e.target.files || []))}
+                    className="text-xs font-mono bg-brand-input"
+                  />
+                  {newPhotoFiles.length > 0 && (
+                    <div className="text-[10px] font-mono text-brand-grey">
+                      {newPhotoFiles.length} nova(s) foto(s) serao adicionada(s) ao salvar.
+                    </div>
+                  )}
                 </div>
               </div>
 
