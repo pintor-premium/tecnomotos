@@ -173,27 +173,27 @@ export default function AdminQuotationsPage() {
   };
 
   const fetchCustomers = async () => {
-    const { data } = await supabase
-      .from('customers')
+    const { data, error: fetchErr } = await supabase
+      .from('profiles')
       .select(`
         id,
-        profiles: id (
-          full_name,
-          email,
-          phone
-        )
+        full_name,
+        email,
+        phone,
+        customers ( id )
       `)
-      .order('created_at', { ascending: false });
+      .order('full_name');
 
-    setCustomers((data || []).map((customer: any) => {
-      const profile = Array.isArray(customer.profiles) ? customer.profiles[0] : customer.profiles;
-      return {
-        id: customer.id,
-        full_name: profile?.full_name || 'Cliente sem nome',
-        email: profile?.email || '',
-        phone: profile?.phone || null
-      };
-    }));
+    if (fetchErr) throw fetchErr;
+
+    setCustomers((data || [])
+      .filter((profile: any) => profile.customers)
+      .map((profile: any) => ({
+        id: profile.id,
+        full_name: profile.full_name || 'Cliente sem nome',
+        email: profile.email || '',
+        phone: profile.phone || null
+      })));
   };
 
   const fetchProducts = async () => {
