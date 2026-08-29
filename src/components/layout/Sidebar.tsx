@@ -41,7 +41,15 @@ interface MenuGroup {
 
 export function Sidebar({ userRole = 'CUSTOMER', userPermissions = [], employeeFunction = null }: SidebarProps) {
   const pathname = usePathname();
-  const [collapsedGroups, setCollapsedGroups] = React.useState<Record<string, boolean>>({});
+  const [collapsedGroups, setCollapsedGroups] = React.useState<Record<string, boolean>>({
+    Comercial: true,
+    'CatÃ¡logo': true,
+    Clientes: true,
+    Oficina: true,
+    Financeiro: true,
+    Fiscal: true,
+    Equipe: true,
+  });
   const isOwner = userRole === 'OWNER';
   const dashboardHref =
     userRole === 'EMPLOYEE' && employeeFunction === 'SELLER' ? '/admin/dashboard/vendedor' :
