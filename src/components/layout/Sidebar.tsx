@@ -43,7 +43,7 @@ export function Sidebar({ userRole = 'CUSTOMER', userPermissions = [], employeeF
   const pathname = usePathname();
   const [collapsedGroups, setCollapsedGroups] = React.useState<Record<string, boolean>>({
     Comercial: true,
-    'CatÃ¡logo': true,
+    'Catálogo': true,
     Clientes: true,
     Oficina: true,
     Financeiro: true,
