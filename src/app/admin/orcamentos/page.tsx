@@ -1,0 +1,699 @@
+'use client';
+
+import React, { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { Breadcrumb } from '@/components/layout/Breadcrumb';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/components/ui/toast';
+import { Check, ClipboardList, Plus, Search, Trash2, X } from 'lucide-react';
+
+type QuotationStatus = 'DRAFT' | 'SENT' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+type QuotationItemType = 'PRODUCT' | 'SERVICE';
+
+interface CustomerOption {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+}
+
+interface ProductOption {
+  id: string;
+  name: string;
+  sku: string | null;
+  price: number;
+}
+
+interface QuotationItemForm {
+  item_type: QuotationItemType;
+  product_id: string;
+  description: string;
+  quantity: string;
+  unit_price: string;
+}
+
+interface QuotationItem {
+  id: string;
+  item_type: QuotationItemType;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+}
+
+interface Quotation {
+  id: string;
+  customer_id: string | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
+  title: string;
+  vehicle_info: string | null;
+  status: QuotationStatus;
+  valid_until: string | null;
+  subtotal: number;
+  discount_amount: number;
+  total_amount: number;
+  notes: string | null;
+  created_at: string;
+  quotation_items?: QuotationItem[];
+}
+
+const statusLabels: Record<QuotationStatus, string> = {
+  DRAFT: 'Rascunho',
+  SENT: 'Enviado',
+  APPROVED: 'Aprovado',
+  REJECTED: 'Recusado',
+  EXPIRED: 'Expirado'
+};
+
+const statusVariants: Record<QuotationStatus, 'neutral' | 'info' | 'success' | 'danger' | 'warning'> = {
+  DRAFT: 'neutral',
+  SENT: 'info',
+  APPROVED: 'success',
+  REJECTED: 'danger',
+  EXPIRED: 'warning'
+};
+
+const emptyItem = (): QuotationItemForm => ({
+  item_type: 'SERVICE',
+  product_id: '',
+  description: '',
+  quantity: '1',
+  unit_price: ''
+});
+
+const money = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+export default function AdminQuotationsPage() {
+  const router = useRouter();
+  const supabase = createClient();
+  const { success, error, info } = useToast();
+
+  const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [customers, setCustomers] = useState<CustomerOption[]>([]);
+  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [canCreate, setCanCreate] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  const [attachCustomer, setAttachCustomer] = useState(true);
+  const [customerId, setCustomerId] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [title, setTitle] = useState('');
+  const [vehicleInfo, setVehicleInfo] = useState('');
+  const [validUntil, setValidUntil] = useState('');
+  const [status, setStatus] = useState<QuotationStatus>('DRAFT');
+  const [discountAmount, setDiscountAmount] = useState('');
+  const [notes, setNotes] = useState('');
+  const [items, setItems] = useState<QuotationItemForm[]>([emptyItem()]);
+
+  const fetchQuotations = async () => {
+    const { data, error: fetchErr } = await supabase
+      .from('quotations')
+      .select(`
+        id,
+        customer_id,
+        customer_name,
+        customer_email,
+        customer_phone,
+        title,
+        vehicle_info,
+        status,
+        valid_until,
+        subtotal,
+        discount_amount,
+        total_amount,
+        notes,
+        created_at,
+        quotation_items (
+          id,
+          item_type,
+          description,
+          quantity,
+          unit_price,
+          total_price
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (fetchErr) {
+      const missingTable = fetchErr.message.includes('quotations');
+      if (missingTable) {
+        setQuotations([]);
+        return;
+      }
+      throw fetchErr;
+    }
+
+    setQuotations((data || []).map((quotation: any) => ({
+      ...quotation,
+      subtotal: parseFloat(String(quotation.subtotal)) || 0,
+      discount_amount: parseFloat(String(quotation.discount_amount)) || 0,
+      total_amount: parseFloat(String(quotation.total_amount)) || 0,
+      quotation_items: (quotation.quotation_items || []).map((item: any) => ({
+        ...item,
+        quantity: parseFloat(String(item.quantity)) || 0,
+        unit_price: parseFloat(String(item.unit_price)) || 0,
+        total_price: parseFloat(String(item.total_price)) || 0
+      }))
+    })));
+  };
+
+  const fetchCustomers = async () => {
+    const { data } = await supabase
+      .from('customers')
+      .select(`
+        id,
+        profiles: id (
+          full_name,
+          email,
+          phone
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    setCustomers((data || []).map((customer: any) => {
+      const profile = Array.isArray(customer.profiles) ? customer.profiles[0] : customer.profiles;
+      return {
+        id: customer.id,
+        full_name: profile?.full_name || 'Cliente sem nome',
+        email: profile?.email || '',
+        phone: profile?.phone || null
+      };
+    }));
+  };
+
+  const fetchProducts = async () => {
+    const { data } = await supabase
+      .from('products')
+      .select('id, name, sku, price')
+      .order('name', { ascending: true });
+
+    setProducts((data || []).map((product: any) => ({
+      ...product,
+      price: parseFloat(String(product.price)) || 0
+    })));
+  };
+
+  useEffect(() => {
+    async function checkAuthAndLoad() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+
+      const { data: hasView } = await supabase.rpc('has_permission', {
+        user_uuid: user.id,
+        required_permission: 'orders.view'
+      });
+
+      if (!hasView) {
+        router.push('/403');
+        return;
+      }
+
+      const { data: hasCreate } = await supabase.rpc('has_permission', {
+        user_uuid: user.id,
+        required_permission: 'orders.create'
+      });
+
+      setCanCreate(Boolean(hasCreate));
+      await Promise.all([fetchQuotations(), fetchCustomers(), fetchProducts()]);
+      setIsLoading(false);
+
+      if (window.location.search.includes('novo=1')) {
+        setIsCreateModalOpen(true);
+      }
+    }
+
+    checkAuthAndLoad();
+  }, []);
+
+  const totals = useMemo(() => {
+    const subtotal = items.reduce((sum, item) => {
+      const quantity = parseFloat(item.quantity.replace(',', '.')) || 0;
+      const unitPrice = parseFloat(item.unit_price.replace(',', '.')) || 0;
+      return sum + quantity * unitPrice;
+    }, 0);
+    const discount = Math.max(0, parseFloat(discountAmount.replace(',', '.')) || 0);
+    return {
+      subtotal,
+      discount,
+      total: Math.max(0, subtotal - discount)
+    };
+  }, [items, discountAmount]);
+
+  const resetForm = () => {
+    setAttachCustomer(true);
+    setCustomerId('');
+    setCustomerName('');
+    setCustomerEmail('');
+    setCustomerPhone('');
+    setTitle('');
+    setVehicleInfo('');
+    setValidUntil('');
+    setStatus('DRAFT');
+    setDiscountAmount('');
+    setNotes('');
+    setItems([emptyItem()]);
+  };
+
+  const updateItem = (index: number, patch: Partial<QuotationItemForm>) => {
+    setItems((current) => current.map((item, itemIndex) => {
+      if (itemIndex !== index) return item;
+      const next = { ...item, ...patch };
+      if (patch.product_id) {
+        const product = products.find((option) => option.id === patch.product_id);
+        if (product) {
+          next.item_type = 'PRODUCT';
+          next.description = product.name;
+          next.unit_price = String(product.price);
+        }
+      }
+      return next;
+    }));
+  };
+
+  const addItem = () => setItems((current) => [...current, emptyItem()]);
+  const removeItem = (index: number) => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index));
+
+  const selectedCustomer = customers.find((customer) => customer.id === customerId);
+
+  const handleCreateQuotation = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!canCreate) {
+      error('Sem permissao', 'Voce nao tem permissao para criar orcamentos.');
+      return;
+    }
+
+    const cleanItems = items
+      .map((item) => {
+        const quantity = parseFloat(item.quantity.replace(',', '.')) || 0;
+        const unitPrice = parseFloat(item.unit_price.replace(',', '.')) || 0;
+        return {
+          item_type: item.item_type,
+          product_id: item.product_id || null,
+          description: item.description.trim(),
+          quantity,
+          unit_price: unitPrice,
+          total_price: quantity * unitPrice
+        };
+      })
+      .filter((item) => item.description && item.quantity > 0);
+
+    if (cleanItems.length === 0) {
+      error('Itens obrigatorios', 'Adicione pelo menos um produto ou servico ao orcamento.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const customerPayload = attachCustomer && selectedCustomer
+        ? {
+            customer_id: selectedCustomer.id,
+            customer_name: selectedCustomer.full_name,
+            customer_email: selectedCustomer.email || null,
+            customer_phone: selectedCustomer.phone || null
+          }
+        : {
+            customer_id: null,
+            customer_name: customerName.trim() || null,
+            customer_email: customerEmail.trim() || null,
+            customer_phone: customerPhone.trim() || null
+          };
+
+      const { data: insertedQuotation, error: insertErr } = await supabase
+        .from('quotations')
+        .insert({
+          ...customerPayload,
+          title: title.trim(),
+          vehicle_info: vehicleInfo.trim() || null,
+          status,
+          valid_until: validUntil || null,
+          subtotal: totals.subtotal,
+          discount_amount: totals.discount,
+          total_amount: totals.total,
+          notes: notes.trim() || null
+        })
+        .select('id')
+        .single();
+
+      if (insertErr) throw insertErr;
+
+      const { error: itemErr } = await supabase
+        .from('quotation_items')
+        .insert(cleanItems.map((item) => ({
+          quotation_id: insertedQuotation.id,
+          ...item
+        })));
+
+      if (itemErr) throw itemErr;
+
+      await fetchQuotations();
+      setIsCreateModalOpen(false);
+      resetForm();
+      setShowSuccessOverlay(true);
+      success('Orcamento gerado', 'O orcamento foi salvo no banco de dados.');
+      window.setTimeout(() => setShowSuccessOverlay(false), 2200);
+    } catch (err: any) {
+      error('Erro ao gerar orcamento', err.message || 'Nao foi possivel salvar o orcamento.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const filteredQuotations = quotations.filter((quotation) => {
+    const query = searchQuery.toLowerCase().trim();
+    const matchesSearch = !query || (
+      quotation.title.toLowerCase().includes(query) ||
+      (quotation.customer_name || '').toLowerCase().includes(query) ||
+      (quotation.customer_email || '').toLowerCase().includes(query) ||
+      (quotation.vehicle_info || '').toLowerCase().includes(query)
+    );
+    const matchesStatus = statusFilter === 'ALL' || quotation.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  return (
+    <div className="space-y-6 text-left">
+      <div>
+        <Breadcrumb items={[{ label: 'Comercial' }, { label: 'Orcamentos' }]} />
+        <div className="flex justify-between items-center mt-2 border-b border-brand-grey/15 pb-4">
+          <div>
+            <h1 className="text-2xl font-black italic uppercase tracking-tight text-white">
+              Orcamentos
+            </h1>
+            <p className="text-xs text-brand-grey uppercase tracking-widest font-mono mt-1">
+              Gere propostas para clientes cadastrados ou atendimentos avulsos
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setIsCreateModalOpen(true)} disabled={!canCreate}>
+            <Plus className="w-4 h-4" /> Novo Orcamento
+          </Button>
+        </div>
+      </div>
+
+      <Card>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div className="relative w-full max-w-md">
+            <Input
+              placeholder="Buscar por cliente, veiculo ou descricao..."
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              className="pl-9 text-xs font-mono bg-brand-input"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-grey/60 pointer-events-none z-10" />
+          </div>
+
+          <div className="flex bg-brand-black p-1 border border-brand-grey/10 rounded font-mono text-[10px] uppercase">
+            {[
+              { id: 'ALL', label: 'Todos' },
+              { id: 'DRAFT', label: 'Rascunho' },
+              { id: 'SENT', label: 'Enviado' },
+              { id: 'APPROVED', label: 'Aprovado' },
+              { id: 'REJECTED', label: 'Recusado' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setStatusFilter(tab.id)}
+                className={`px-3 py-1.5 rounded transition-colors ${statusFilter === tab.id ? 'bg-brand-red text-white font-bold' : 'text-brand-grey hover:text-white'}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : filteredQuotations.length === 0 ? (
+          <div className="py-16 text-center text-brand-grey">
+            <ClipboardList className="w-12 h-12 mx-auto mb-4 opacity-30" />
+            <h3 className="text-sm font-black uppercase tracking-wider text-white">Nenhum orcamento registrado</h3>
+            <p className="text-xs mt-2">Os orcamentos gerados aparecerao estruturados aqui.</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Orcamento</TableHead>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Veiculo</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Validade</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredQuotations.map((quotation) => (
+                <TableRow key={quotation.id}>
+                  <TableCell>
+                    <div className="font-black text-white uppercase">{quotation.title}</div>
+                    <div className="text-[10px] font-mono text-brand-grey">#{quotation.id.slice(0, 8).toUpperCase()}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-brand-silver">{quotation.customer_name || 'Sem cliente anexado'}</div>
+                    <div className="text-[10px] font-mono text-brand-grey">{quotation.customer_email || quotation.customer_phone || '-'}</div>
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-brand-grey">{quotation.vehicle_info || '-'}</TableCell>
+                  <TableCell className="font-mono text-sm text-white">{money(quotation.total_amount)}</TableCell>
+                  <TableCell><Badge variant={statusVariants[quotation.status]}>{statusLabels[quotation.status]}</Badge></TableCell>
+                  <TableCell className="font-mono text-xs text-brand-grey">
+                    {quotation.valid_until ? new Date(`${quotation.valid_until}T00:00:00`).toLocaleDateString('pt-BR') : '-'}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Card>
+
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-xs">
+          <Card className="w-full max-w-4xl mx-4 relative p-6 space-y-6 max-h-[90vh] overflow-y-auto" withStripe>
+            <button
+              onClick={() => {
+                setIsCreateModalOpen(false);
+                resetForm();
+              }}
+              className="absolute top-4 right-4 text-brand-grey hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div>
+              <h3 className="text-lg font-black italic uppercase tracking-tight text-white">
+                Gerar Orcamento
+              </h3>
+              <p className="text-[10px] text-brand-grey font-mono uppercase tracking-widest mt-1">
+                Monte uma proposta com cliente cadastrado ou atendimento avulso
+              </p>
+            </div>
+
+            <form onSubmit={handleCreateQuotation} className="space-y-5 text-left">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAttachCustomer(true)}
+                  className={`px-3 py-2 text-[10px] font-mono uppercase border transition-colors ${attachCustomer ? 'bg-brand-red border-brand-red text-white' : 'border-brand-grey/25 text-brand-grey hover:text-white'}`}
+                >
+                  Anexar cliente cadastrado
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAttachCustomer(false);
+                    setCustomerId('');
+                  }}
+                  className={`px-3 py-2 text-[10px] font-mono uppercase border transition-colors ${!attachCustomer ? 'bg-brand-red border-brand-red text-white' : 'border-brand-grey/25 text-brand-grey hover:text-white'}`}
+                >
+                  Orcamento sem cliente
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {attachCustomer ? (
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[10px] font-mono text-brand-grey uppercase">Cliente cadastrado</label>
+                    <select
+                      value={customerId}
+                      onChange={(event) => setCustomerId(event.target.value)}
+                      className="w-full text-xs font-mono bg-brand-input border border-brand-grey/25 text-white rounded px-3 py-2 focus:outline-none focus:border-brand-red"
+                      required={attachCustomer}
+                    >
+                      <option value="">Selecione o cliente</option>
+                      {customers.map((customer) => (
+                        <option key={customer.id} value={customer.id}>{customer.full_name} - {customer.email}</option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono text-brand-grey uppercase">Nome do cliente</label>
+                      <Input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Opcional" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono text-brand-grey uppercase">Contato / WhatsApp</label>
+                      <Input value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} placeholder="Opcional" />
+                    </div>
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="text-[10px] font-mono text-brand-grey uppercase">E-mail</label>
+                      <Input type="email" value={customerEmail} onChange={(event) => setCustomerEmail(event.target.value)} placeholder="Opcional" />
+                    </div>
+                  </>
+                )}
+
+                <div className="space-y-1 md:col-span-2">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Titulo do orcamento</label>
+                  <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Ex: Revisao geral Fazer 250" required />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Motocicleta / Placa</label>
+                  <Input value={vehicleInfo} onChange={(event) => setVehicleInfo(event.target.value)} placeholder="Ex: Yamaha FZ15 - SQD5E90" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Validade</label>
+                  <Input type="date" value={validUntil} onChange={(event) => setValidUntil(event.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Status</label>
+                  <select
+                    value={status}
+                    onChange={(event) => setStatus(event.target.value as QuotationStatus)}
+                    className="w-full text-xs font-mono bg-brand-input border border-brand-grey/25 text-white rounded px-3 py-2 focus:outline-none focus:border-brand-red"
+                  >
+                    <option value="DRAFT">Rascunho</option>
+                    <option value="SENT">Enviado</option>
+                    <option value="APPROVED">Aprovado</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Desconto R$</label>
+                  <Input inputMode="decimal" value={discountAmount} onChange={(event) => setDiscountAmount(event.target.value)} placeholder="0,00" />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between border-b border-brand-grey/10 pb-2">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-brand-red">Itens do orcamento</h4>
+                  <Button type="button" size="sm" variant="secondary" onClick={addItem}>
+                    <Plus className="w-3.5 h-3.5" /> Adicionar Item
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {items.map((item, index) => (
+                    <div key={index} className="grid grid-cols-1 lg:grid-cols-[130px_1fr_90px_120px_40px] gap-3 border border-brand-grey/15 bg-brand-input/40 p-3">
+                      <select
+                        value={item.item_type}
+                        onChange={(event) => updateItem(index, { item_type: event.target.value as QuotationItemType, product_id: '' })}
+                        className="text-xs font-mono bg-brand-input border border-brand-grey/25 text-white rounded px-3 py-2 focus:outline-none focus:border-brand-red"
+                      >
+                        <option value="SERVICE">Servico</option>
+                        <option value="PRODUCT">Produto</option>
+                      </select>
+                      {item.item_type === 'PRODUCT' ? (
+                        <select
+                          value={item.product_id}
+                          onChange={(event) => updateItem(index, { product_id: event.target.value })}
+                          className="text-xs font-mono bg-brand-input border border-brand-grey/25 text-white rounded px-3 py-2 focus:outline-none focus:border-brand-red"
+                        >
+                          <option value="">Selecione um produto</option>
+                          {products.map((product) => (
+                            <option key={product.id} value={product.id}>{product.name} - {money(product.price)}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input value={item.description} onChange={(event) => updateItem(index, { description: event.target.value })} placeholder="Descricao do servico" required />
+                      )}
+                      <Input inputMode="decimal" value={item.quantity} onChange={(event) => updateItem(index, { quantity: event.target.value })} placeholder="Qtd" required />
+                      <Input inputMode="decimal" value={item.unit_price} onChange={(event) => updateItem(index, { unit_price: event.target.value })} placeholder="Valor" required />
+                      <button
+                        type="button"
+                        onClick={() => removeItem(index)}
+                        disabled={items.length === 1}
+                        className="h-10 border border-brand-grey/25 text-brand-grey hover:text-brand-red disabled:opacity-30"
+                      >
+                        <Trash2 className="w-4 h-4 mx-auto" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_260px] gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Observacoes</label>
+                  <textarea
+                    rows={4}
+                    value={notes}
+                    onChange={(event) => setNotes(event.target.value)}
+                    className="w-full text-xs font-mono bg-brand-input border border-brand-grey/25 text-white rounded px-3 py-2 focus:outline-none focus:border-brand-red"
+                    placeholder="Condições, prazo de execucao, garantia ou observacoes internas..."
+                  />
+                </div>
+                <div className="border border-brand-grey/15 bg-brand-black/60 p-4 space-y-3 font-mono text-xs">
+                  <div className="flex justify-between text-brand-grey"><span>Subtotal</span><span>{money(totals.subtotal)}</span></div>
+                  <div className="flex justify-between text-brand-grey"><span>Desconto</span><span>{money(totals.discount)}</span></div>
+                  <div className="flex justify-between text-white text-base font-black border-t border-brand-grey/15 pt-3"><span>Total</span><span>{money(totals.total)}</span></div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-6 border-t border-brand-grey/10">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setIsCreateModalOpen(false);
+                    resetForm();
+                    info('Orcamento cancelado', 'Nenhum orcamento foi registrado.');
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? 'Salvando...' : 'Salvar Orcamento'}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {showSuccessOverlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs">
+          <div className="bg-brand-card border border-emerald-500/35 p-8 rounded shadow-2xl flex flex-col items-center gap-4 text-center max-w-sm mx-4 animate-in fade-in zoom-in-95 duration-200" style={{ borderLeft: '4px solid #10b981' }}>
+            <div className="w-12 h-12 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center text-emerald-500">
+              <Check className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-black tracking-wider uppercase text-emerald-500 leading-tight">
+              ORCAMENTO GERADO COM SUCESSO!
+            </h3>
+            <p className="text-[11px] text-brand-grey leading-normal">
+              A proposta foi registrada no banco de dados.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

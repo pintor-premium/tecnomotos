@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/ui/logo';
 import {
   ChevronDown,
+  ClipboardList,
   LayoutDashboard,
   ShoppingBag,
   Tag,
@@ -32,6 +33,7 @@ interface MenuItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   permission?: string;
+  activePath?: string;
 }
 
 interface MenuGroup {
@@ -75,6 +77,7 @@ export function Sidebar({ userRole = 'CUSTOMER', userPermissions = [], employeeF
       title: 'Comercial',
       items: [
         { label: 'Pedidos', href: '/admin/pedidos', icon: ShoppingBag, permission: 'orders.view' },
+        { label: 'Orçamentos', href: '/admin/orcamentos?novo=1', activePath: '/admin/orcamentos', icon: ClipboardList, permission: 'orders.view' },
         { label: 'Descontos', href: '/admin/descontos', icon: Tag, permission: 'discounts.view' },
       ],
     },
@@ -169,7 +172,8 @@ export function Sidebar({ userRole = 'CUSTOMER', userPermissions = [], employeeF
                 <ul className="space-y-1">
                   {permittedItems.map((item, itemIdx) => {
                     const Icon = item.icon;
-                    const isActive = pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href));
+                    const activePath = item.activePath ?? item.href;
+                    const isActive = pathname === activePath || (activePath !== '/admin/dashboard' && pathname.startsWith(activePath));
 
                     return (
                       <li key={itemIdx}>
