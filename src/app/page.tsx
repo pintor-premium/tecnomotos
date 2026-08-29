@@ -132,7 +132,7 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredProducts.map((product) => (
               <Card key={product.id} hoverEffect className="flex flex-col justify-between overflow-hidden" withStripe>
-                <div className="relative w-full h-40 bg-brand-darkgrey border-b border-brand-grey/10 mb-4 overflow-hidden rounded-t">
+                <div className="relative w-full aspect-square bg-brand-darkgrey border-b border-brand-grey/10 mb-4 overflow-hidden rounded-t">
                   {product.imageUrl ? (
                     <>
                       <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono uppercase tracking-widest text-brand-grey">
@@ -141,7 +141,7 @@ export default async function HomePage() {
                       <img
                         src={encodeURI(product.imageUrl)}
                         alt={product.name}
-                        className="relative z-10 h-full w-full object-cover hover:scale-105 transition-transform duration-300 select-none"
+                        className="relative z-10 h-full w-full object-contain hover:scale-105 transition-transform duration-300 select-none"
                         onError={(event) => {
                           event.currentTarget.style.display = 'none';
                         }}
