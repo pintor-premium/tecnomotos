@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils/cn';
 interface SidebarProps {
   userRole?: string;
   userPermissions?: string[];
+  employeeFunction?: string | null;
 }
 
 interface MenuItem {
@@ -37,9 +38,15 @@ interface MenuGroup {
   items: MenuItem[];
 }
 
-export function Sidebar({ userRole = 'CUSTOMER', userPermissions = [] }: SidebarProps) {
+export function Sidebar({ userRole = 'CUSTOMER', userPermissions = [], employeeFunction = null }: SidebarProps) {
   const pathname = usePathname();
   const isOwner = userRole === 'OWNER';
+  const dashboardHref =
+    userRole === 'EMPLOYEE' && employeeFunction === 'SELLER' ? '/admin/dashboard/vendedor' :
+    userRole === 'EMPLOYEE' && employeeFunction === 'MECHANIC' ? '/admin/dashboard/mecanico' :
+    userRole === 'EMPLOYEE' && employeeFunction === 'CASHIER' ? '/admin/dashboard/caixa' :
+    userRole === 'EMPLOYEE' && employeeFunction === 'FINANCIAL' ? '/admin/dashboard/financeiro' :
+    '/admin/dashboard';
 
   // Helper to verify if item is permitted
   const hasPerm = (perm?: string) => {
@@ -51,7 +58,7 @@ export function Sidebar({ userRole = 'CUSTOMER', userPermissions = [] }: Sidebar
   const menuGroups: MenuGroup[] = [
     {
       items: [
-        { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard, permission: 'dashboard.view' },
+        { label: 'Dashboard', href: dashboardHref, icon: LayoutDashboard, permission: 'dashboard.view' },
       ],
     },
     {
@@ -133,7 +140,7 @@ export function Sidebar({ userRole = 'CUSTOMER', userPermissions = [] }: Sidebar
               <ul className="space-y-1">
                 {permittedItems.map((item, itemIdx) => {
                   const Icon = item.icon;
-                  const isActive = pathname === item.href;
+                  const isActive = pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href));
 
                   return (
                     <li key={itemIdx}>

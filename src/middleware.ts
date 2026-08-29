@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { getEmployeeDashboardPath } from '@/lib/auth/employee-dashboard';
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -58,8 +59,13 @@ export async function middleware(request: NextRequest) {
 
   // If user IS authenticated and tries to access /login
   if (isLoginPath) {
-    if (role === 'OWNER' || role === 'EMPLOYEE') {
+    if (role === 'OWNER') {
       return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    } else if (role === 'EMPLOYEE') {
+      const employeeFunction =
+        (user.app_metadata?.employee_function as string | undefined) ||
+        (user.user_metadata?.employee_function as string | undefined);
+      return NextResponse.redirect(new URL(getEmployeeDashboardPath(employeeFunction), request.url));
     } else {
       return NextResponse.redirect(new URL('/cliente', request.url));
     }
@@ -72,7 +78,10 @@ export async function middleware(request: NextRequest) {
 
   // If user is an OWNER or EMPLOYEE trying to access /cliente
   if (isClientPath && (role === 'OWNER' || role === 'EMPLOYEE')) {
-    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    const employeeFunction =
+      (user.app_metadata?.employee_function as string | undefined) ||
+      (user.user_metadata?.employee_function as string | undefined);
+    return NextResponse.redirect(new URL(role === 'EMPLOYEE' ? getEmployeeDashboardPath(employeeFunction) : '/admin/dashboard', request.url));
   }
 
   return response;

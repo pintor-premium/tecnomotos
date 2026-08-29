@@ -8,6 +8,7 @@ type EmployeeFunction = 'SELLER' | 'MECHANIC' | 'CASHIER' | 'FINANCIAL';
 interface CreateEmployeeInput {
   fullName: string;
   email: string;
+  password: string;
   cpf: string;
   phone: string;
   employeeFunction: EmployeeFunction;
@@ -39,14 +40,22 @@ export async function createEmployeeAction(input: CreateEmployeeInput) {
     }
 
     const adminClient = createAdminClient();
-    const tempPassword = Math.random().toString(36).slice(-10) + 'A1!';
+
+    if (input.password.length < 6) {
+      return { success: false, error: 'A senha deve ter pelo menos 6 caracteres.' };
+    }
 
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
       email: input.email,
-      password: tempPassword,
+      password: input.password,
       email_confirm: true,
+      app_metadata: {
+        role: 'EMPLOYEE',
+        employee_function: input.employeeFunction
+      },
       user_metadata: {
         role: 'EMPLOYEE',
+        employee_function: input.employeeFunction,
         full_name: input.fullName,
         phone: input.phone
       }
@@ -124,7 +133,7 @@ export async function createEmployeeAction(input: CreateEmployeeInput) {
       return { success: false, error: employeeErr.message };
     }
 
-    return { success: true, userId: newUserId, tempPassword };
+    return { success: true, userId: newUserId };
   } catch (err) {
     console.error('[createEmployeeAction] Unexpected error:', err);
     return { success: false, error: err instanceof Error ? err.message : 'Erro inesperado ao cadastrar funcionario.' };

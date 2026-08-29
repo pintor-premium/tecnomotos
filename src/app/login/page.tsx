@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/toast';
 import { LogIn } from 'lucide-react';
 import { z } from 'zod';
 import Link from 'next/link';
+import { getEmployeeDashboardPath } from '@/lib/auth/employee-dashboard';
 
 const loginSchema = z.object({
   email: z.string().email('Por favor, informe um e-mail válido.'),
@@ -71,8 +72,25 @@ export default function LoginPage() {
 
       if (nextUrl) {
         router.push(nextUrl);
-      } else if (role === 'OWNER' || role === 'EMPLOYEE') {
+      } else if (role === 'OWNER') {
         router.push('/admin/dashboard');
+      } else if (role === 'EMPLOYEE') {
+        const metadataFunction =
+          (user?.app_metadata?.employee_function as string | undefined) ||
+          (user?.user_metadata?.employee_function as string | undefined);
+        let employeeFunction = metadataFunction;
+
+        if (!employeeFunction && user?.id) {
+          const { data: employeeData } = await supabase
+            .from('employees')
+            .select('employee_function')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          employeeFunction = employeeData?.employee_function || undefined;
+        }
+
+        router.push(getEmployeeDashboardPath(employeeFunction));
       } else {
         router.push('/cliente');
       }

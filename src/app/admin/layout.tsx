@@ -31,7 +31,20 @@ export default async function AdminLayout({
 
   // Fetch employee permissions if they are an employee
   let permissions: string[] = [];
+  let employeeFunction: string | null = null;
   if (role === 'EMPLOYEE') {
+    const { data: employeeData } = await supabase
+      .from('employees')
+      .select('employee_function')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    employeeFunction =
+      employeeData?.employee_function ||
+      (user.app_metadata?.employee_function as string | undefined) ||
+      (user.user_metadata?.employee_function as string | undefined) ||
+      null;
+
     const { data: userRoles } = await supabase
       .from('user_roles')
       .select('role_id')
@@ -62,7 +75,7 @@ export default async function AdminLayout({
 
   return (
     <div className="flex h-screen bg-brand-black overflow-hidden select-none">
-      <Sidebar userRole={role} userPermissions={permissions} />
+        <Sidebar userRole={role} userPermissions={permissions} employeeFunction={employeeFunction} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Topbar userEmail={user.email || ''} userRole={role} />
         <main className="flex-1 overflow-y-auto bg-brand-black p-6 telemetry-grid">

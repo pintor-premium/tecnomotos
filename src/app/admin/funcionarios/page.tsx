@@ -46,10 +46,11 @@ export default function AdminEmployeesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
-  const [createdPassword, setCreatedPassword] = useState('');
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [cpf, setCpf] = useState('');
   const [phone, setPhone] = useState('');
   const [employeeFunction, setEmployeeFunction] = useState<EmployeeFunction>('SELLER');
@@ -126,6 +127,8 @@ export default function AdminEmployeesPage() {
   const resetForm = () => {
     setFullName('');
     setEmail('');
+    setPassword('');
+    setConfirmPassword('');
     setCpf('');
     setPhone('');
     setEmployeeFunction('SELLER');
@@ -140,8 +143,18 @@ export default function AdminEmployeesPage() {
 
   const handleCreateEmployee = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!fullName || !email || !cpf || !phone || !street || !number || !neighborhood || !city || !state || !postalCode) {
-      error('Campos Obrigatorios', 'Preencha nome, CPF, endereco, contato e funcao.');
+    if (!fullName || !email || !password || !confirmPassword || !cpf || !phone || !street || !number || !neighborhood || !city || !state || !postalCode) {
+      error('Campos Obrigatorios', 'Preencha nome, CPF, contato, senha, endereco e funcao.');
+      return;
+    }
+
+    if (password.length < 6) {
+      error('Senha Invalida', 'A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      error('Senha Invalida', 'A senha e a confirmacao precisam ser iguais.');
       return;
     }
 
@@ -149,6 +162,7 @@ export default function AdminEmployeesPage() {
     const res = await createEmployeeAction({
       fullName,
       email,
+      password,
       cpf,
       phone,
       employeeFunction,
@@ -167,7 +181,6 @@ export default function AdminEmployeesPage() {
       return;
     }
 
-    setCreatedPassword(res.tempPassword || '');
     resetForm();
     setIsModalOpen(false);
     setShowSuccessOverlay(true);
@@ -306,6 +319,14 @@ export default function AdminEmployeesPage() {
                     <label className="text-[10px] font-mono text-brand-grey uppercase">Contato / WhatsApp</label>
                     <Input value={phone} onChange={(e) => setPhone(e.target.value)} required />
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono text-brand-grey uppercase">Senha</label>
+                    <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono text-brand-grey uppercase">Confirmar Senha</label>
+                    <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                  </div>
                   <div className="space-y-1 md:col-span-2">
                     <label className="text-[10px] font-mono text-brand-grey uppercase">Funcao</label>
                     <select
@@ -389,7 +410,7 @@ export default function AdminEmployeesPage() {
               FUNCIONARIO REGISTRADO COM SUCESSO!
             </h3>
             <p className="text-[11px] text-brand-grey leading-normal">
-              O acesso foi criado como EMPLOYEE. Senha temporaria: <span className="text-white select-all">{createdPassword}</span>
+              O acesso foi criado como EMPLOYEE. O funcionario ja pode entrar com o e-mail e a senha cadastrados.
             </p>
           </div>
         </div>
