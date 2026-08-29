@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/toast';
+import { ProductImage } from '@/components/ui/product-image';
 import { useRouter } from 'next/navigation';
 
 interface Product {
@@ -28,11 +29,6 @@ export default function PublicProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  const getImageSrc = (imageUrl?: string) => {
-    const cleanUrl = imageUrl?.trim();
-    return cleanUrl ? encodeURI(cleanUrl) : null;
-  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -147,25 +143,11 @@ export default function PublicProductsPage() {
                 {products.map((p, idx) => (
                   <Card key={idx} hoverEffect className="flex flex-col justify-between overflow-hidden" withStripe>
                     <div className="relative w-full aspect-square bg-brand-darkgrey border-b border-brand-grey/10 mb-4 overflow-hidden rounded-t">
-                      {getImageSrc(p.image_url) ? (
-                        <>
-                          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono uppercase tracking-widest text-brand-grey">
-                            Sem imagem cadastrada
-                          </div>
-                          <img
-                            src={getImageSrc(p.image_url) || ''}
-                            alt={p.name}
-                            className="relative z-10 h-full w-full object-contain hover:scale-105 transition-transform duration-300 select-none"
-                            onError={(event) => {
-                              event.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        </>
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center text-[10px] font-mono uppercase tracking-widest text-brand-grey">
-                          Sem imagem cadastrada
-                        </div>
-                      )}
+                      <ProductImage
+                        src={p.image_url}
+                        alt={p.name}
+                        className="hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
 
                     <div className="px-4 flex-1 flex flex-col justify-between">

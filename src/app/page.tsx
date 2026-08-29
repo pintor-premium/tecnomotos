@@ -5,6 +5,7 @@ import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ProductImage } from '@/components/ui/product-image';
 import { Wrench, Shield, Zap, Flame, Compass, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
@@ -133,25 +134,11 @@ export default async function HomePage() {
             {featuredProducts.map((product) => (
               <Card key={product.id} hoverEffect className="flex flex-col justify-between overflow-hidden" withStripe>
                 <div className="relative w-full aspect-square bg-brand-darkgrey border-b border-brand-grey/10 mb-4 overflow-hidden rounded-t">
-                  {product.imageUrl ? (
-                    <>
-                      <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono uppercase tracking-widest text-brand-grey">
-                        Sem imagem cadastrada
-                      </div>
-                      <img
-                        src={encodeURI(product.imageUrl)}
-                        alt={product.name}
-                        className="relative z-10 h-full w-full object-contain hover:scale-105 transition-transform duration-300 select-none"
-                        onError={(event) => {
-                          event.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    </>
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center text-[10px] font-mono uppercase tracking-widest text-brand-grey">
-                      Sem imagem cadastrada
-                    </div>
-                  )}
+                  <ProductImage
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
                 
                 <div className="px-4 flex-1 flex flex-col justify-between">

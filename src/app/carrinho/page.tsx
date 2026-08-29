@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
+import { ProductImage } from '@/components/ui/product-image';
 import { ShoppingCart, Trash2, ShieldCheck, ArrowRight, Minus, Plus } from 'lucide-react';
 
 interface CartItem {
@@ -68,11 +69,6 @@ export default function CartPage() {
     const updated = cart.filter((_, i) => i !== idx);
     saveCart(updated);
     info('Item removido', 'O item foi removido do seu carrinho.');
-  };
-
-  const getImageSrc = (imageUrl?: string) => {
-    const cleanUrl = imageUrl?.trim();
-    return cleanUrl ? encodeURI(cleanUrl) : null;
   };
 
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -150,25 +146,13 @@ export default function CartPage() {
               {cart.map((item, idx) => (
                 <Card key={idx} className="flex flex-col sm:flex-row items-center gap-4 p-4">
                   <div className="relative w-20 h-20 bg-brand-darkgrey rounded border border-brand-grey/15 overflow-hidden flex-shrink-0">
-                    {getImageSrc(item.image_url) ? (
-                      <>
-                        <div className="absolute inset-0 flex items-center justify-center text-[8px] font-mono uppercase text-brand-grey text-center px-1">
-                          Sem imagem
-                        </div>
-                        <img
-                          src={getImageSrc(item.image_url) || ''}
-                          alt={item.name}
-                          className="relative z-10 h-full w-full object-cover"
-                          onError={(event) => {
-                            event.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      </>
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center text-[8px] font-mono uppercase text-brand-grey text-center px-1">
-                        Sem imagem
-                      </div>
-                    )}
+                    <ProductImage
+                      src={item.image_url}
+                      alt={item.name}
+                      className="object-cover"
+                      fallbackLabel="Sem imagem"
+                      fallbackClassName="text-[8px] tracking-normal px-1"
+                    />
                   </div>
 
                   <div className="flex-1 text-center sm:text-left space-y-1">
