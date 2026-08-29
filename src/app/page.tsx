@@ -134,13 +134,19 @@ export default async function HomePage() {
               <Card key={product.id} hoverEffect className="flex flex-col justify-between overflow-hidden" withStripe>
                 <div className="relative w-full h-40 bg-brand-darkgrey border-b border-brand-grey/10 mb-4 overflow-hidden rounded-t">
                   {product.imageUrl ? (
-                    <Image
-                      src={product.imageUrl}
-                      alt={product.name}
-                      fill
-                      className="object-cover hover:scale-105 transition-transform duration-300 select-none"
-                      sizes="(max-w-7xl) 25vw, 100vw"
-                    />
+                    <>
+                      <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono uppercase tracking-widest text-brand-grey">
+                        Sem imagem cadastrada
+                      </div>
+                      <img
+                        src={encodeURI(product.imageUrl)}
+                        alt={product.name}
+                        className="relative z-10 h-full w-full object-cover hover:scale-105 transition-transform duration-300 select-none"
+                        onError={(event) => {
+                          event.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </>
                   ) : (
                     <div className="h-full w-full flex items-center justify-center text-[10px] font-mono uppercase tracking-widest text-brand-grey">
                       Sem imagem cadastrada

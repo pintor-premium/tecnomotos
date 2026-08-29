@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/toast';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 
 interface Product {
   id?: string;
@@ -29,6 +28,11 @@ export default function PublicProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const getImageSrc = (imageUrl?: string) => {
+    const cleanUrl = imageUrl?.trim();
+    return cleanUrl ? encodeURI(cleanUrl) : null;
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -142,16 +146,21 @@ export default function PublicProductsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map((p, idx) => (
                   <Card key={idx} hoverEffect className="flex flex-col justify-between overflow-hidden" withStripe>
-                    {/* Imagem do Produto */}
                     <div className="relative w-full h-40 bg-brand-darkgrey border-b border-brand-grey/10 mb-4 overflow-hidden rounded-t">
-                      {p.image_url ? (
-                        <Image
-                          src={p.image_url}
-                          alt={p.name}
-                          fill
-                          className="object-cover hover:scale-105 transition-transform duration-300 select-none"
-                          sizes="(max-w-7xl) 33vw, 100vw"
-                        />
+                      {getImageSrc(p.image_url) ? (
+                        <>
+                          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono uppercase tracking-widest text-brand-grey">
+                            Sem imagem cadastrada
+                          </div>
+                          <img
+                            src={getImageSrc(p.image_url) || ''}
+                            alt={p.name}
+                            className="relative z-10 h-full w-full object-cover hover:scale-105 transition-transform duration-300 select-none"
+                            onError={(event) => {
+                              event.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </>
                       ) : (
                         <div className="h-full w-full flex items-center justify-center text-[10px] font-mono uppercase tracking-widest text-brand-grey">
                           Sem imagem cadastrada

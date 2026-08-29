@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { ShoppingCart, Trash2, ShieldCheck, ArrowRight, Minus, Plus } from 'lucide-react';
-import Image from 'next/image';
 
 interface CartItem {
   id: string;
@@ -71,20 +70,9 @@ export default function CartPage() {
     info('Item removido', 'O item foi removido do seu carrinho.');
   };
 
-  const getProductImage = (sku: string, imageUrl?: string) => {
-    if (imageUrl) return imageUrl;
-    switch (sku) {
-      case 'ESC-GP-01':
-        return 'https://images.unsplash.com/photo-1615887023516-9b6bcd559e87?q=80&w=600&auto=format&fit=crop';
-      case 'PST-RC-02':
-        return 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?q=80&w=600&auto=format&fit=crop';
-      case 'AMR-PR-03':
-        return 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=600&auto=format&fit=crop';
-      case 'PNE-SB-04':
-        return 'https://images.unsplash.com/photo-1591439657848-9f4b9ce436b9?q=80&w=600&auto=format&fit=crop';
-      default:
-        return 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=600&auto=format&fit=crop';
-    }
+  const getImageSrc = (imageUrl?: string) => {
+    const cleanUrl = imageUrl?.trim();
+    return cleanUrl ? encodeURI(cleanUrl) : null;
   };
 
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -162,12 +150,25 @@ export default function CartPage() {
               {cart.map((item, idx) => (
                 <Card key={idx} className="flex flex-col sm:flex-row items-center gap-4 p-4">
                   <div className="relative w-20 h-20 bg-brand-darkgrey rounded border border-brand-grey/15 overflow-hidden flex-shrink-0">
-                    <Image
-                      src={getProductImage(item.sku, item.image_url)}
-                      alt={item.name}
-                      fill
-                      className="object-cover"
-                    />
+                    {getImageSrc(item.image_url) ? (
+                      <>
+                        <div className="absolute inset-0 flex items-center justify-center text-[8px] font-mono uppercase text-brand-grey text-center px-1">
+                          Sem imagem
+                        </div>
+                        <img
+                          src={getImageSrc(item.image_url) || ''}
+                          alt={item.name}
+                          className="relative z-10 h-full w-full object-cover"
+                          onError={(event) => {
+                            event.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-[8px] font-mono uppercase text-brand-grey text-center px-1">
+                        Sem imagem
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex-1 text-center sm:text-left space-y-1">
