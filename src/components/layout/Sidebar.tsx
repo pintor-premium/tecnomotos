@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/ui/logo';
 import {
+  ChevronDown,
   LayoutDashboard,
   ShoppingBag,
   Tag,
@@ -40,6 +41,7 @@ interface MenuGroup {
 
 export function Sidebar({ userRole = 'CUSTOMER', userPermissions = [], employeeFunction = null }: SidebarProps) {
   const pathname = usePathname();
+  const [collapsedGroups, setCollapsedGroups] = React.useState<Record<string, boolean>>({});
   const isOwner = userRole === 'OWNER';
   const dashboardHref =
     userRole === 'EMPLOYEE' && employeeFunction === 'SELLER' ? '/admin/dashboard/vendedor' :
@@ -129,39 +131,59 @@ export function Sidebar({ userRole = 'CUSTOMER', userPermissions = [], employeeF
           // Filter items based on current user permissions
           const permittedItems = group.items.filter((item) => hasPerm(item.permission));
           if (permittedItems.length === 0) return null;
+          const groupKey = group.title ?? `group-${groupIdx}`;
+          const isCollapsed = Boolean(group.title && collapsedGroups[groupKey]);
 
           return (
             <div key={groupIdx} className="space-y-2">
               {group.title && (
-                <h4 className="text-[9px] uppercase font-mono tracking-[0.2em] text-brand-grey font-bold px-3">
-                  {group.title}
-                </h4>
+                <button
+                  type="button"
+                  aria-expanded={!isCollapsed}
+                  onClick={() =>
+                    setCollapsedGroups((current) => ({
+                      ...current,
+                      [groupKey]: !current[groupKey],
+                    }))
+                  }
+                  className="flex w-full items-center justify-between px-3 text-left text-[9px] font-mono font-black uppercase tracking-[0.2em] text-brand-red drop-shadow-[0_0_7px_rgba(255,0,0,0.55)] transition-colors hover:text-red-400"
+                >
+                  <span>{group.title}</span>
+                  <ChevronDown
+                    className={cn(
+                      'h-3 w-3 shrink-0 transition-transform',
+                      isCollapsed && '-rotate-90'
+                    )}
+                  />
+                </button>
               )}
-              <ul className="space-y-1">
-                {permittedItems.map((item, itemIdx) => {
-                  const Icon = item.icon;
-                  const isActive = pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href));
+              {!isCollapsed && (
+                <ul className="space-y-1">
+                  {permittedItems.map((item, itemIdx) => {
+                    const Icon = item.icon;
+                    const isActive = pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href));
 
-                  return (
-                    <li key={itemIdx}>
-                      <Link
-                        href={item.href}
-                        className={cn(
-                          'flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-wider font-semibold transition-all skew-x-[-6deg] hover:bg-white/5 hover:text-white',
-                          isActive
-                            ? 'bg-brand-red text-white hover:bg-brand-red font-bold'
-                            : 'text-brand-grey'
-                        )}
-                      >
-                        <span className="skew-x-[6deg] flex items-center gap-3">
-                          <Icon className="w-4 h-4 shrink-0" />
-                          {item.label}
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+                    return (
+                      <li key={itemIdx}>
+                        <Link
+                          href={item.href}
+                          className={cn(
+                            'flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-wider font-semibold transition-all skew-x-[-6deg] hover:bg-white/5 hover:text-white',
+                            isActive
+                              ? 'bg-brand-red text-white hover:bg-brand-red font-bold'
+                              : 'text-brand-grey'
+                          )}
+                        >
+                          <span className="skew-x-[6deg] flex items-center gap-3">
+                            <Icon className="w-4 h-4 shrink-0" />
+                            {item.label}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
           );
         })}
