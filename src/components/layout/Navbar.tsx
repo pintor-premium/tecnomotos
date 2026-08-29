@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/ui/logo';
 import { ShoppingCart, User, Search, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils/cn';
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -13,12 +15,23 @@ interface NavbarProps {
 
 export function Navbar({ isAuthenticated = false, userRole = 'CUSTOMER' }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const accountHref = !isAuthenticated
     ? '/login'
     : userRole === 'OWNER' || userRole === 'EMPLOYEE'
     ? '/admin/dashboard'
     : '/cliente';
+
+  const navLinks = [
+    { label: 'Home', href: '/' },
+    { label: 'Loja', href: '/loja' },
+    { label: 'Pe\u00e7as', href: '/produtos' },
+    { label: 'Servi\u00e7os', href: '/oficina' },
+  ];
+
+  const isActive = (href: string) =>
+    pathname === href || (href !== '/' && pathname.startsWith(href));
 
   return (
     <header className="bg-brand-black border-b border-brand-grey/15 text-white sticky top-0 z-40">
@@ -30,18 +43,18 @@ export function Navbar({ isAuthenticated = false, userRole = 'CUSTOMER' }: Navba
 
         {/* Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-6 text-xs font-mono uppercase tracking-widest font-bold">
-          <Link href="/" className="hover:text-brand-red transition-colors text-white">
-            Home
-          </Link>
-          <Link href="/loja" className="hover:text-brand-red transition-colors text-brand-grey">
-            Loja
-          </Link>
-          <Link href="/produtos" className="hover:text-brand-red transition-colors text-brand-grey">
-            Peças
-          </Link>
-          <Link href="/oficina" className="hover:text-brand-red transition-colors text-brand-grey">
-            Serviços
-          </Link>
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                'hover:text-brand-red transition-colors',
+                isActive(link.href) ? 'text-white' : 'text-brand-grey'
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         {/* Search bar */}
@@ -112,34 +125,19 @@ export function Navbar({ isAuthenticated = false, userRole = 'CUSTOMER' }: Navba
 
           {/* Mobile Links */}
           <nav className="flex flex-col space-y-4 text-xs font-mono uppercase tracking-widest font-bold">
-            <Link
-              href="/"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="hover:text-brand-red transition-colors text-white py-2 border-b border-brand-grey/5"
-            >
-              Home
-            </Link>
-            <Link
-              href="/loja"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="hover:text-brand-red transition-colors text-brand-grey py-2 border-b border-brand-grey/5"
-            >
-              Loja
-            </Link>
-            <Link
-              href="/produtos"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="hover:text-brand-red transition-colors text-brand-grey py-2 border-b border-brand-grey/5"
-            >
-              Peças
-            </Link>
-            <Link
-              href="/oficina"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="hover:text-brand-red transition-colors text-brand-grey py-2 border-b border-brand-grey/5"
-            >
-              Serviços
-            </Link>
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={cn(
+                  'hover:text-brand-red transition-colors py-2 border-b border-brand-grey/5',
+                  isActive(link.href) ? 'text-white' : 'text-brand-grey'
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
 
           {/* Account Button Mobile */}
