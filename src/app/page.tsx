@@ -12,8 +12,7 @@ import { createClient } from '@/lib/supabase/server';
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  // Fetch products from database
-  let featuredProducts: { id: string; name: string; category: string; price: number; speedAccent: string; image: string }[] = [];
+  let featuredProducts: { id: string; name: string; category: string; price: number; speedAccent: string; imageUrl: string | null }[] = [];
   try {
     const supabase = await createClient();
     const { data } = await supabase
@@ -21,53 +20,19 @@ export default async function HomePage() {
       .select('sku, name, price, category, image_url')
       .eq('show_in_store', true)
       .limit(4);
-      
-    if (data && data.length > 0) {
-      featuredProducts = data.map((p) => {
-        let speedAccent = 'Componente';
-        let image = p.image_url || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=600&auto=format&fit=crop';
-        
-        if (!p.image_url) {
-          if (p.sku === 'ESC-GP-01') {
-            speedAccent = 'Alta Vazão';
-            image = 'https://images.unsplash.com/photo-1615887023516-9b6bcd559e87?q=80&w=600&auto=format&fit=crop';
-          } else if (p.sku === 'PST-RC-02') {
-            speedAccent = 'Fricção Máxima';
-            image = 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?q=80&w=600&auto=format&fit=crop';
-          } else if (p.sku === 'AMR-PR-03') {
-            speedAccent = 'Ajuste Fino';
-            image = 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=600&auto=format&fit=crop';
-          } else if (p.sku === 'PNE-SB-04') {
-            speedAccent = 'Aderência Pista';
-            image = 'https://images.unsplash.com/photo-1591439657848-9f4b9ce436b9?q=80&w=600&auto=format&fit=crop';
-          }
-        } else {
-          speedAccent = p.category || 'Novidade';
-        }
-        
-        return {
-          id: p.sku,
-          name: p.name,
-          category: p.category || 'Peças',
-          price: p.price,
-          speedAccent,
-          image
-        };
-      });
-    }
+
+    featuredProducts = (data || []).map((p) => ({
+      id: p.sku,
+      name: p.name,
+      category: p.category || 'Pecas',
+      price: p.price,
+      speedAccent: p.category || 'Novidade',
+      imageUrl: p.image_url || null
+    }));
   } catch (err) {
-    console.warn('[Home] DB connection failed, using local mock.', err);
+    console.warn('[Home] DB connection failed.', err);
   }
 
-  // Fallback if DB is empty or connection fails
-  if (featuredProducts.length === 0) {
-    featuredProducts = [
-      { id: 'ESC-GP-01', name: 'Escapamento Esportivo Carbon GP', category: 'Escapamentos', price: 2450.00, speedAccent: 'Alta Vazão', image: 'https://images.unsplash.com/photo-1615887023516-9b6bcd559e87?q=80&w=600&auto=format&fit=crop' },
-      { id: 'PST-RC-02', name: 'Pastilha de Freio Sinterizada Racing', category: 'Freios', price: 280.00, speedAccent: 'Fricção Máxima', image: 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?q=80&w=600&auto=format&fit=crop' },
-      { id: 'AMR-PR-03', name: 'Amortecedor Traseiro Regulável PRO', category: 'Suspensão', price: 1890.00, speedAccent: 'Ajuste Fino', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=600&auto=format&fit=crop' },
-      { id: 'PNE-SB-04', name: 'Pneu Superbike Slick Radial', category: 'Pneus', price: 1200.00, speedAccent: 'Aderência Pista', image: 'https://images.unsplash.com/photo-1591439657848-9f4b9ce436b9?q=80&w=600&auto=format&fit=crop' },
-    ];
-  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -113,29 +78,28 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Telemetry panel visual mock */}
           <div className="w-full max-w-md bg-brand-card border border-brand-grey/20 p-6 shadow-2xl relative skew-x-[-4deg]">
             <div className="skew-x-[4deg] space-y-4">
               <div className="flex justify-between items-center border-b border-brand-grey/15 pb-2">
-                <span className="text-[10px] font-mono text-brand-grey tracking-widest uppercase">DIAGNOSTICO DE DADOS</span>
+                <span className="text-[10px] font-mono text-brand-grey tracking-widest uppercase">DADOS DO CATALOGO</span>
                 <span className="w-2 h-2 rounded-full bg-brand-red animate-pulse" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-brand-black/40 p-3 border border-brand-grey/10 font-mono">
-                  <p className="text-[9px] text-brand-grey">MAX VELOCIDADE</p>
-                  <p className="text-2xl font-black text-white italic">312 km/h</p>
+                  <p className="text-[9px] text-brand-grey">PRODUTOS VISIVEIS</p>
+                  <p className="text-2xl font-black text-white italic">{featuredProducts.length}</p>
                 </div>
                 <div className="bg-brand-black/40 p-3 border border-brand-grey/10 font-mono">
-                  <p className="text-[9px] text-brand-grey">MOTOR GIROS</p>
-                  <p className="text-2xl font-black text-brand-red italic">14.500 RPM</p>
+                  <p className="text-[9px] text-brand-grey">CATEGORIAS</p>
+                  <p className="text-2xl font-black text-brand-red italic">{new Set(featuredProducts.map((product) => product.category)).size}</p>
                 </div>
                 <div className="bg-brand-black/40 p-3 border border-brand-grey/10 font-mono col-span-2">
-                  <p className="text-[9px] text-brand-grey">PRESSÃO PNEUS (DIANTEIRO / TRASEIRO)</p>
-                  <p className="text-base font-bold text-white italic">32 PSI / 29 PSI</p>
+                  <p className="text-[9px] text-brand-grey">MAIOR VALOR CADASTRADO</p>
+                  <p className="text-base font-bold text-white italic">{Math.max(0, ...featuredProducts.map((product) => product.price)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                 </div>
               </div>
               <div className="w-full bg-brand-darkgrey h-1.5 rounded-full overflow-hidden">
-                <div className="bg-brand-red h-full w-[85%] animate-pulse" />
+                <div className="bg-brand-red h-full animate-pulse" style={{ width: `${Math.min(100, featuredProducts.length * 25)}%` }} />
               </div>
             </div>
             {/* Corner decals */}
@@ -148,7 +112,7 @@ export default async function HomePage() {
         <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-grey/10 to-transparent" />
       </section>
 
-      {/* Destaques (Mock list) */}
+      {/* Destaques */}
       <section className="bg-brand-black py-20 border-b border-brand-grey/15">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-end mb-12">
@@ -168,15 +132,20 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredProducts.map((product) => (
               <Card key={product.id} hoverEffect className="flex flex-col justify-between overflow-hidden" withStripe>
-                {/* Imagem do Produto */}
                 <div className="relative w-full h-40 bg-brand-darkgrey border-b border-brand-grey/10 mb-4 overflow-hidden rounded-t">
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    fill
-                    className="object-cover hover:scale-105 transition-transform duration-300 select-none"
-                    sizes="(max-w-7xl) 25vw, 100vw"
-                  />
+                  {product.imageUrl ? (
+                    <Image
+                      src={product.imageUrl}
+                      alt={product.name}
+                      fill
+                      className="object-cover hover:scale-105 transition-transform duration-300 select-none"
+                      sizes="(max-w-7xl) 25vw, 100vw"
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-[10px] font-mono uppercase tracking-widest text-brand-grey">
+                      Sem imagem cadastrada
+                    </div>
+                  )}
                 </div>
                 
                 <div className="px-4 flex-1 flex flex-col justify-between">

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { SefazMtFiscalService } from '@/lib/services/fiscal/SefazMtFiscalService';
-import { MockFiscalService } from '@/lib/services/fiscal/MockFiscalService';
 
 export async function POST(request: Request) {
   try {
@@ -25,22 +24,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Read target environment from settings
-    const { data: settings } = await supabase
-      .from('fiscal_settings')
-      .select('environment')
-      .single();
-
-    const env = settings?.environment || 'mock';
-
-    let statusResult;
-    if (env === 'mock') {
-      const mockService = new MockFiscalService();
-      statusResult = await mockService.getServiceStatus();
-    } else {
-      const sefazService = new SefazMtFiscalService();
-      statusResult = await sefazService.getServiceStatus();
-    }
+    const sefazService = new SefazMtFiscalService();
+    const statusResult = await sefazService.getServiceStatus();
 
     return NextResponse.json({
       success: true,

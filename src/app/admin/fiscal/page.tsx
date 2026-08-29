@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Breadcrumb } from '@/components/layout/Breadcrumb';
@@ -11,7 +11,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { EmptyState } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, Plus, Eye, Download, CheckCircle, RefreshCw, AlertCircle, ShoppingCart, XCircle } from 'lucide-react';
+import { FileText, Plus, CheckCircle, RefreshCw, AlertCircle, XCircle } from 'lucide-react';
 
 interface FiscalDocument {
   id: string;
@@ -25,105 +25,99 @@ interface FiscalDocument {
   created_at: string;
 }
 
+interface PendingFiscalOrder {
+  id: string;
+  customer_email: string;
+  total_amount: number | string;
+  created_at: string;
+  order_items?: Array<{
+    id: string;
+    quantity: number;
+    unit_price: number | string;
+    products?: {
+      id: string;
+      name: string;
+      ncm?: string | null;
+      cfop?: string | null;
+      csosn?: string | null;
+      origin?: number | null;
+      unit?: string | null;
+    } | Array<{
+      id: string;
+      name: string;
+      ncm?: string | null;
+      cfop?: string | null;
+      csosn?: string | null;
+      origin?: number | null;
+      unit?: string | null;
+    }> | null;
+  }>;
+}
+
+const money = (value: number | string) =>
+  (parseFloat(String(value)) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
 export default function AdminFiscalPage() {
   const router = useRouter();
   const supabase = createClient();
   const { success, error, info } = useToast();
 
   const [documents, setDocuments] = useState<FiscalDocument[]>([]);
+  const [orders, setOrders] = useState<PendingFiscalOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEmitting, setIsEmitting] = useState<string | null>(null);
 
-  // Mock orders available for invoice emission simulation
-  const mockOrders = [
-    {
-      id: '3098',
-      clientName: 'Sandro Müller',
-      document: '123.456.789-00',
-      description: 'Escapamento Akrapovic GP Carbon',
-      paymentMethod: 'pix',
-      total: 2450.00,
-      items: [
-        {
-          id: 'p-1',
-          name: 'Escapamento Akrapovic GP Carbon',
-          price: 2450.00,
-          quantity: 1,
-          ncm: '8714.10.00',
-          cfop: '5102',
-          csosn: '102',
-          origin: 0,
-          unit: 'UN'
-        }
-      ]
-    },
-    {
-      id: '3099',
-      clientName: 'Mariana Souza',
-      document: '987.654.321-11',
-      description: 'Revisão Geral Superbike Setup',
-      paymentMethod: 'card',
-      total: 550.00,
-      items: [
-        {
-          id: 's-1',
-          name: 'Revisão Geral Superbike Setup',
-          price: 550.00,
-          quantity: 1,
-          ncm: '9901.00.00',
-          cfop: '5933',
-          csosn: '400',
-          origin: 0,
-          unit: 'UN'
-        }
-      ]
-    },
-    {
-      id: '3100',
-      clientName: 'Carlos Ferreira',
-      document: '444.555.666-77',
-      description: 'Pneu Pirelli Slick + Balanceamento',
-      paymentMethod: 'cash',
-      total: 1320.00,
-      items: [
-        {
-          id: 'p-2',
-          name: 'Pneu Pirelli Slick Superbike',
-          price: 1200.00,
-          quantity: 1,
-          ncm: '4011.40.00',
-          cfop: '5102',
-          csosn: '102',
-          origin: 0,
-          unit: 'UN'
-        },
-        {
-          id: 's-2',
-          name: 'Serviço de Balanceamento e Troca',
-          price: 120.00,
-          quantity: 1,
-          ncm: '9901.00.00',
-          cfop: '5933',
-          csosn: '400',
-          origin: 0,
-          unit: 'UN'
-        }
-      ]
-    }
-  ];
-
   const fetchDocuments = async () => {
-    try {
-      const { data: docs, error: fetchErr } = await supabase
-        .from('fiscal_documents')
-        .select('*')
-        .order('created_at', { ascending: false });
+    const { data: docs, error: fetchErr } = await supabase
+      .from('fiscal_documents')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-      if (fetchErr) throw fetchErr;
-      setDocuments(docs || []);
+    if (fetchErr) throw fetchErr;
+    setDocuments(docs || []);
+    return docs || [];
+  };
+
+  const fetchPaidOrders = async (currentDocuments: FiscalDocument[]) => {
+    const { data, error: fetchErr } = await supabase
+      .from('orders')
+      .select(`
+        id,
+        customer_email,
+        total_amount,
+        created_at,
+        order_items (
+          id,
+          quantity,
+          unit_price,
+          products: product_id (
+            id,
+            name,
+            ncm,
+            cfop,
+            csosn,
+            origin,
+            unit
+          )
+        )
+      `)
+      .eq('status', 'paid')
+      .order('created_at', { ascending: false });
+
+    if (fetchErr) throw fetchErr;
+
+    const emittedOrderIds = new Set(currentDocuments.map((doc) => doc.order_id));
+    setOrders(((data || []) as unknown as PendingFiscalOrder[]).filter((order) => !emittedOrderIds.has(order.id)));
+  };
+
+  const loadFiscalData = async () => {
+    setIsLoading(true);
+    try {
+      const docs = await fetchDocuments();
+      await fetchPaidOrders(docs);
     } catch (e: unknown) {
       console.error(e);
-      error('Erro ao Carregar', 'Não foi possível buscar as notas fiscais emitidas.');
+      error('Erro ao carregar', 'Nao foi possivel buscar dados fiscais reais.');
     } finally {
       setIsLoading(false);
     }
@@ -147,56 +141,61 @@ export default function AdminFiscalPage() {
         return;
       }
 
-      await fetchDocuments();
+      await loadFiscalData();
     }
 
     checkAuthAndLoad();
   }, []);
 
-  const handleEmitInvoice = async (mockOrder: typeof mockOrders[0]) => {
-    setIsEmitting(mockOrder.id);
-    info('Conectando Sefaz', `Simulando emissão da NFC-e para o pedido #${mockOrder.id}...`);
+  const pendingOrders = useMemo(() => orders.filter((order) => (order.order_items || []).length > 0), [orders]);
+
+  const handleEmitInvoice = async (order: PendingFiscalOrder) => {
+    setIsEmitting(order.id);
+    info('Emitindo NFC-e', `Enviando pedido #${order.id.slice(0, 8).toUpperCase()} para emissao fiscal.`);
 
     try {
+      const items = (order.order_items || []).map((item) => {
+        const product = Array.isArray(item.products) ? item.products[0] : item.products;
+        return {
+        id: product?.id || item.id,
+        name: product?.name || 'Item do pedido',
+        price: parseFloat(String(item.unit_price)) || 0,
+        quantity: item.quantity,
+        ncm: product?.ncm || '0000.00.00',
+        cfop: product?.cfop || '5102',
+        csosn: product?.csosn || '102',
+        origin: product?.origin ?? 0,
+        unit: product?.unit || 'UN'
+      };
+      });
+
       const response = await fetch('/api/fiscal/emit', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          orderId: crypto.randomUUID(), // Simulated order UUID
-          items: mockOrder.items,
-          customerName: mockOrder.clientName,
-          customerDocument: mockOrder.document,
-          paymentMethod: mockOrder.paymentMethod,
+          orderId: order.id,
+          items,
+          customerName: order.customer_email,
+          customerDocument: '',
+          paymentMethod: 'other'
         }),
       });
 
       const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Erro desconhecido na emissao.');
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Erro desconhecido na emissão.');
-      }
-
-      success(
-        'NFC-e Autorizada',
-        `Nota Nº ${result.document.invoice_number} (Série ${result.document.series}) emitida com sucesso!`
-      );
-      
-      await fetchDocuments();
+      success('NFC-e registrada', `Nota N. ${result.document.invoice_number} registrada com sucesso.`);
+      await loadFiscalData();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Falha na conexão.';
-      error('Falha de Emissão', msg);
+      const msg = e instanceof Error ? e.message : 'Falha na emissao.';
+      error('Falha de emissao', msg);
     } finally {
       setIsEmitting(null);
     }
   };
 
   const handleCheckStatus = (doc: FiscalDocument) => {
-    success(
-      'Sefaz OK',
-      `Nota fiscal Nº ${doc.invoice_number} está AUTORIZADA e homologada em ambiente de teste.`
-    );
+    success('Status fiscal', `Nota fiscal N. ${doc.invoice_number}: ${doc.status}.`);
   };
 
   return (
@@ -206,67 +205,64 @@ export default function AdminFiscalPage() {
         <div className="flex justify-between items-center mt-2 border-b border-brand-grey/15 pb-4">
           <div>
             <h1 className="text-2xl font-black italic uppercase tracking-tight text-white">
-              Emissão Fiscal NFC-e
+              Emissao Fiscal NFC-e
             </h1>
             <p className="text-xs text-brand-grey uppercase tracking-widest font-mono mt-1">
-              Monitore e simule emissões de notas fiscais eletrônicas de vendas e serviços
+              Monitore documentos fiscais e emita notas a partir de pedidos pagos reais
             </p>
           </div>
-          <Badge variant="danger" className="animate-pulse">Ambiente Mock</Badge>
+          <Badge variant="neutral">Dados Reais</Badge>
         </div>
       </div>
 
-      {/* Grid: Simulação de Pedidos Prontos para Emissão */}
       <div className="space-y-4">
         <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-brand-grey border-b border-brand-grey/15 pb-2">
-          Simular Emissão por Pedidos Pendentes
+          Pedidos pagos pendentes de emissao
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {mockOrders.map((order) => {
-            const alreadyEmitted = documents.some(
-              (doc) => doc.xml_url.includes(order.clientName.replace(' ', '%20')) || doc.invoice_number === order.id
-            ); // Just a simple match representation for simulation UX
-
-            return (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Skeleton className="h-36 w-full" />
+            <Skeleton className="h-36 w-full" />
+            <Skeleton className="h-36 w-full" />
+          </div>
+        ) : pendingOrders.length === 0 ? (
+          <Card>
+            <EmptyState
+              title="Nenhum pedido fiscal pendente"
+              description="Pedidos pagos reais que ainda nao possuem documento fiscal aparecerao aqui."
+            />
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {pendingOrders.map((order) => (
               <Card key={order.id} className="flex flex-col justify-between" withStripe>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-mono text-brand-grey">PEDIDO #{order.id}</span>
-                    <Badge variant={order.paymentMethod === 'pix' ? 'success' : 'neutral'} className="text-[9px]">
-                      {order.paymentMethod.toUpperCase()}
-                    </Badge>
+                    <span className="text-[10px] font-mono text-brand-grey">PEDIDO #{order.id.slice(0, 8).toUpperCase()}</span>
+                    <Badge variant="success" className="text-[9px]">PAGO</Badge>
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white leading-tight">{order.description}</h3>
-                    <p className="text-[11px] text-brand-grey mt-1 font-mono">Cliente: {order.clientName}</p>
-                    <p className="text-[11px] text-brand-grey font-mono">CPF: {order.document}</p>
+                    <h3 className="text-sm font-bold text-white leading-tight">{order.customer_email}</h3>
+                    <p className="text-[11px] text-brand-grey mt-1 font-mono">{order.order_items?.length || 0} item(ns)</p>
                   </div>
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-brand-grey/10 flex items-center justify-between">
-                  <span className="text-sm font-black text-white italic">
-                    R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    disabled={isEmitting !== null}
-                    onClick={() => handleEmitInvoice(order)}
-                  >
+                  <span className="text-sm font-black text-white italic">{money(order.total_amount)}</span>
+                  <Button variant="primary" size="sm" disabled={isEmitting !== null} onClick={() => handleEmitInvoice(order)}>
                     <Plus className="w-3.5 h-3.5 mr-1" />
                     {isEmitting === order.id ? 'Emitindo...' : 'Emitir NFC-e'}
                   </Button>
                 </div>
               </Card>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Listagem das Notas Fiscais Emitidas no Banco de Dados */}
       <div className="space-y-4 pt-4">
         <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-brand-grey border-b border-brand-grey/15 pb-2">
-          Histórico de Documentos Fiscais
+          Historico de Documentos Fiscais
         </h2>
 
         {isLoading ? (
@@ -279,7 +275,7 @@ export default function AdminFiscalPage() {
           <Card>
             <EmptyState
               title="Nenhuma nota fiscal emitida"
-              description="Use os cards acima para simular o processo de geração e envio de uma NFC-e para a Sefaz."
+              description="Os documentos fiscais reais registrados no banco de dados aparecerao aqui."
             />
           </Card>
         ) : (
@@ -287,18 +283,18 @@ export default function AdminFiscalPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nota / Série</TableHead>
+                  <TableHead>Nota / Serie</TableHead>
                   <TableHead>Status Sefaz</TableHead>
-                  <TableHead>Data de Emissão</TableHead>
+                  <TableHead>Data de Emissao</TableHead>
                   <TableHead>Documentos</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="text-right">Acoes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {documents.map((doc) => (
                   <TableRow key={doc.id}>
                     <TableCell className="font-mono text-xs font-bold text-white">
-                      Nº {doc.invoice_number} / S-{doc.series}
+                      N. {doc.invoice_number} / S-{doc.series}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5">
@@ -325,32 +321,22 @@ export default function AdminFiscalPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <a
-                          href={doc.danfe_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-[11px] font-mono text-brand-red hover:underline"
-                        >
-                          <FileText className="w-3.5 h-3.5" />
-                          DANFE (PDF)
-                        </a>
-                        <a
-                          href={doc.xml_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-[11px] font-mono text-brand-grey hover:text-white hover:underline"
-                        >
-                          <FileText className="w-3.5 h-3.5" />
-                          XML
-                        </a>
+                        {doc.danfe_url && (
+                          <a href={doc.danfe_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-mono text-brand-red hover:underline">
+                            <FileText className="w-3.5 h-3.5" />
+                            DANFE
+                          </a>
+                        )}
+                        {doc.xml_url && (
+                          <a href={doc.xml_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-mono text-brand-grey hover:text-white hover:underline">
+                            <FileText className="w-3.5 h-3.5" />
+                            XML
+                          </a>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleCheckStatus(doc)}
-                      >
+                      <Button variant="secondary" size="sm" onClick={() => handleCheckStatus(doc)}>
                         <RefreshCw className="w-3 h-3 mr-1" />
                         Status
                       </Button>

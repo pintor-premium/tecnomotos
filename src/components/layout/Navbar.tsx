@@ -44,7 +44,7 @@ export function Navbar({ isAuthenticated = false, userRole = 'CUSTOMER' }: Navba
           </Link>
         </nav>
 
-        {/* Search bar mock */}
+        {/* Search bar */}
         <div className="hidden sm:flex flex-1 max-w-md relative">
           <input
             type="text"

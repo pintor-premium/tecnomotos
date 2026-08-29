@@ -30,31 +30,6 @@ export default function PublicProductsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Fallback mock items
-  const mockProducts: Product[] = [
-    { sku: 'ESC-GP-01', name: 'Escapamento Esportivo Carbon GP', brand: 'Akrapovic', price: 2450.00, category: 'Escapamentos' },
-    { sku: 'PST-RC-02', name: 'Pastilha de Freio Sinterizada Racing', brand: 'Brembo', price: 280.00, category: 'Freios' },
-    { sku: 'AMR-PR-03', name: 'Amortecedor Traseiro Regulável PRO', brand: 'Öhlins', price: 1890.00, category: 'Suspensão' },
-    { sku: 'PNE-SB-04', name: 'Pneu Superbike Slick Radial', brand: 'Pirelli', price: 1200.00, category: 'Pneus' },
-  ];
-
-  const getProductImage = (sku: string, imageUrl?: string) => {
-    if (imageUrl) return imageUrl;
-    switch (sku) {
-      case 'ESC-GP-01':
-        return 'https://images.unsplash.com/photo-1615887023516-9b6bcd559e87?q=80&w=600&auto=format&fit=crop';
-      case 'PST-RC-02':
-        return 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?q=80&w=600&auto=format&fit=crop';
-      case 'AMR-PR-03':
-        return 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=600&auto=format&fit=crop';
-      case 'PNE-SB-04':
-        return 'https://images.unsplash.com/photo-1591439657848-9f4b9ce436b9?q=80&w=600&auto=format&fit=crop';
-      default:
-        // Generic premium bike component placeholder
-        return 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=600&auto=format&fit=crop';
-    }
-  };
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session);
@@ -112,14 +87,10 @@ export default function PublicProductsPage() {
 
         if (error) throw error;
 
-        if (data && data.length > 0) {
-          setProducts(data as Product[]);
-        } else {
-          setProducts(mockProducts);
-        }
+        setProducts((data || []) as Product[]);
       } catch (err) {
-        console.warn('[Products Catalog] DB fetch failed, using fallback catalog.', err);
-        setProducts(mockProducts);
+        console.warn('[Products Catalog] DB fetch failed.', err);
+        setProducts([]);
       } finally {
         setIsLoading(false);
       }
@@ -173,13 +144,19 @@ export default function PublicProductsPage() {
                   <Card key={idx} hoverEffect className="flex flex-col justify-between overflow-hidden" withStripe>
                     {/* Imagem do Produto */}
                     <div className="relative w-full h-40 bg-brand-darkgrey border-b border-brand-grey/10 mb-4 overflow-hidden rounded-t">
-                      <Image
-                        src={getProductImage(p.sku, p.image_url)}
-                        alt={p.name}
-                        fill
-                        className="object-cover hover:scale-105 transition-transform duration-300 select-none"
-                        sizes="(max-w-7xl) 33vw, 100vw"
-                      />
+                      {p.image_url ? (
+                        <Image
+                          src={p.image_url}
+                          alt={p.name}
+                          fill
+                          className="object-cover hover:scale-105 transition-transform duration-300 select-none"
+                          sizes="(max-w-7xl) 33vw, 100vw"
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center text-[10px] font-mono uppercase tracking-widest text-brand-grey">
+                          Sem imagem cadastrada
+                        </div>
+                      )}
                     </div>
 
                     <div className="px-4 flex-1 flex flex-col justify-between">

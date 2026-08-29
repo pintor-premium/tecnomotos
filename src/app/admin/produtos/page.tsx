@@ -100,12 +100,6 @@ export default function AdminProductsPage() {
     }
   };
 
-  // Fallback mock catalog items
-  const mockProducts: Product[] = [
-    { sku: 'ESC-GP-01', location: 'Corredor A', name: 'Escapamento Esportivo Carbon GP', brand: 'Akrapovic', price: 2450.00, stock_quantity: 12, category: 'Escapamentos', min_stock_quantity: 5 },
-    { sku: 'PST-RC-02', location: 'Gaveta B', name: 'Pastilha de Freio Sinterizada Racing', brand: 'Brembo', price: 280.00, stock_quantity: 45, category: 'Freios', min_stock_quantity: 5 },
-    { sku: 'AMR-PR-03', location: 'Corredor C', name: 'Amortecedor Traseiro Regulável PRO', brand: 'Öhlins', price: 1890.00, stock_quantity: 4, category: 'Suspensão', min_stock_quantity: 5 },
-  ];
 
   const fetchProducts = async () => {
     try {
@@ -116,14 +110,10 @@ export default function AdminProductsPage() {
 
       if (fetchErr) throw fetchErr;
 
-      if (data && data.length > 0) {
-        setProducts(data as Product[]);
-      } else {
-        setProducts(mockProducts);
-      }
+      setProducts((data || []) as Product[]);
     } catch (e: unknown) {
-      console.warn('[Products] DB query failed, showing mock fallback: ', e);
-      setProducts(mockProducts);
+      console.warn('[Products] DB query failed: ', e);
+      setProducts([]);
     } finally {
       setIsLoading(false);
     }

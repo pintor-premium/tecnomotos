@@ -26,12 +26,6 @@ export default function AdminInventoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fallback mock items
-  const mockProducts: Product[] = [
-    { sku: 'ESC-GP-01', name: 'Escapamento Esportivo Carbon GP', brand: 'Akrapovic', stock_quantity: 12, min_stock_quantity: 5 },
-    { sku: 'PST-RC-02', name: 'Pastilha de Freio Sinterizada Racing', brand: 'Brembo', stock_quantity: 45, min_stock_quantity: 5 },
-    { sku: 'AMR-PR-03', name: 'Amortecedor Traseiro Regulável PRO', brand: 'Öhlins', stock_quantity: 4, min_stock_quantity: 5 },
-  ];
 
   const loadInventory = async () => {
     try {
@@ -42,14 +36,10 @@ export default function AdminInventoryPage() {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        setProducts(data as Product[]);
-      } else {
-        setProducts(mockProducts);
-      }
+      setProducts((data || []) as Product[]);
     } catch (err) {
-      console.warn('[Inventory] Fetch failed, using fallback.', err);
-      setProducts(mockProducts);
+      console.warn('[Inventory] Fetch failed.', err);
+      setProducts([]);
     } finally {
       setIsLoading(false);
     }

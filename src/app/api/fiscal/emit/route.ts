@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { MockFiscalService } from '@/lib/services/fiscal/MockFiscalService';
+import { SefazMtFiscalService } from '@/lib/services/fiscal/SefazMtFiscalService';
 
 export async function POST(request: Request) {
   try {
@@ -30,8 +30,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Dados do pedido inválidos para emissão' }, { status: 400 });
     }
 
-    // 4. Instantiate MockFiscalService
-    const fiscalService = new MockFiscalService();
+    const fiscalService = new SefazMtFiscalService();
 
     // 5. Create NFC-e Draft
     const emitResult = await fiscalService.createNfce(orderId, {
@@ -45,7 +44,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: emitResult.errorMessage || 'Falha ao simular NFC-e' }, { status: 500 });
     }
 
-    // 6. Send NFC-e to Sefaz (Fetch Mock URLs)
     const sendResult = await fiscalService.sendNfce(emitResult.documentId);
 
     if (!sendResult.success) {

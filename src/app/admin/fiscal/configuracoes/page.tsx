@@ -26,7 +26,7 @@ interface FiscalSettings {
   nfe_series: string;
   nfce_series: string;
   nfce_next_number: number;
-  environment: 'mock' | 'homologation' | 'production';
+  environment: 'homologation' | 'production';
 }
 
 export default function AdminFiscalSettingsPage() {
@@ -45,7 +45,7 @@ export default function AdminFiscalSettingsPage() {
 
   // State to manage environment change confirmation
   const [confirmProdText, setConfirmProdText] = useState('');
-  const [tempEnvironment, setTempEnvironment] = useState<'mock' | 'homologation' | 'production'>('mock');
+  const [tempEnvironment, setTempEnvironment] = useState<'homologation' | 'production'>('homologation');
 
   useEffect(() => {
     async function loadSettings() {
@@ -75,9 +75,8 @@ export default function AdminFiscalSettingsPage() {
         error('Erro ao Carregar', 'Falha ao buscar as configurações fiscais do banco de dados.');
       } else if (fs) {
         setSettings(fs as FiscalSettings);
-        setTempEnvironment(fs.environment);
+        setTempEnvironment(fs.environment === 'production' ? 'production' : 'homologation');
       } else {
-        // Fallback default structure
         setSettings({
           id: '',
           company_name: 'TECNOMOTOS',
@@ -92,7 +91,7 @@ export default function AdminFiscalSettingsPage() {
           nfe_series: '1',
           nfce_series: '1',
           nfce_next_number: 1,
-          environment: 'mock',
+          environment: 'homologation',
         });
       }
       setIsLoading(false);
@@ -361,8 +360,8 @@ export default function AdminFiscalSettingsPage() {
                 Ambiente de Comunicação
               </h2>
               <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-2">
-                  {(['mock', 'homologation', 'production'] as const).map((env) => (
+                <div className="grid grid-cols-2 gap-2">
+                  {(['homologation', 'production'] as const).map((env) => (
                     <button
                       key={env}
                       type="button"
