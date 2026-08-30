@@ -1,40 +1,40 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { SefazMtFiscalService } from '@/lib/services/fiscal/SefazMtFiscalService';
+import { createFiscalProvider, getFiscalRuntimeConfig } from '@/lib/services/fiscal/FiscalProviderFactory';
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const supabase = await createClient();
 
-    // 1. Authenticate user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 });
     }
 
-    // 2. Authorize user (OWNER only)
     const { data: isOwner, error: roleError } = await supabase.rpc('is_owner', {
       user_uuid: user.id
     });
 
     if (roleError || !isOwner) {
       return NextResponse.json(
-        { error: 'Acesso negado: Somente proprietários (OWNER) podem testar conexões com a SEFAZ.' },
+        { error: 'Acesso negado: Somente proprietarios OWNER podem testar conexoes fiscais.' },
         { status: 403 }
       );
     }
 
-    const sefazService = new SefazMtFiscalService();
-    const statusResult = await sefazService.getServiceStatus();
+    const config = getFiscalRuntimeConfig();
+    const provider = createFiscalProvider();
+    const statusResult = await provider.getServiceStatus();
 
     return NextResponse.json({
       success: true,
+      provider: config.provider,
       status: statusResult.status,
       environment: statusResult.environment,
       lastCheck: statusResult.lastCheck,
     });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Erro interno ao consultar status da SEFAZ.';
+    const msg = e instanceof Error ? e.message : 'Erro interno ao consultar provedor fiscal.';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

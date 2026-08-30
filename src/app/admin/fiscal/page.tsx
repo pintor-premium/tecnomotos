@@ -20,8 +20,11 @@ interface FiscalDocument {
   series: string;
   xml_url: string;
   danfe_url: string;
-  status: 'EMITTED' | 'CANCELLED' | 'ERROR';
+  status: 'pending' | 'processing' | 'authorized' | 'rejected' | 'cancelled' | 'contingency' | 'error' | 'EMITTED' | 'CANCELLED' | 'ERROR';
   error_message?: string;
+  reference?: string;
+  access_key?: string;
+  protocol?: string;
   created_at: string;
 }
 
@@ -154,27 +157,11 @@ export default function AdminFiscalPage() {
     info('Emitindo NFC-e', `Enviando pedido #${order.id.slice(0, 8).toUpperCase()} para emissao fiscal.`);
 
     try {
-      const items = (order.order_items || []).map((item) => {
-        const product = Array.isArray(item.products) ? item.products[0] : item.products;
-        return {
-        id: product?.id || item.id,
-        name: product?.name || 'Item do pedido',
-        price: parseFloat(String(item.unit_price)) || 0,
-        quantity: item.quantity,
-        ncm: product?.ncm || '0000.00.00',
-        cfop: product?.cfop || '5102',
-        csosn: product?.csosn || '102',
-        origin: product?.origin ?? 0,
-        unit: product?.unit || 'UN'
-      };
-      });
-
       const response = await fetch('/api/fiscal/emit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId: order.id,
-          items,
           customerName: order.customer_email,
           customerDocument: '',
           paymentMethod: 'other'
@@ -184,7 +171,7 @@ export default function AdminFiscalPage() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Erro desconhecido na emissao.');
 
-      success('NFC-e registrada', `Nota N. ${result.document.invoice_number} registrada com sucesso.`);
+      success('NFC-e registrada', result.reused ? 'Documento fiscal ja existente foi reutilizado.' : 'Documento fiscal registrado com sucesso.');
       await loadFiscalData();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Falha na emissao.';
@@ -194,8 +181,43 @@ export default function AdminFiscalPage() {
     }
   };
 
-  const handleCheckStatus = (doc: FiscalDocument) => {
-    success('Status fiscal', `Nota fiscal N. ${doc.invoice_number}: ${doc.status}.`);
+  const handleCheckStatus = async (doc: FiscalDocument) => {
+    try {
+      info('Consultando NFC-e', `Atualizando status fiscal de ${doc.reference || doc.id}.`);
+      const response = await fetch('/api/fiscal/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: doc.id }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Erro ao consultar NFC-e.');
+      success('Status atualizado', `Documento fiscal: ${result.document.status}.`);
+      await loadFiscalData();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Falha na consulta.';
+      error('Consulta fiscal falhou', msg);
+    }
+  };
+
+  const handleCancel = async (doc: FiscalDocument) => {
+    const reason = window.prompt('Informe a justificativa do cancelamento da NFC-e (15 a 255 caracteres):');
+    if (!reason) return;
+
+    try {
+      info('Cancelando NFC-e', `Enviando cancelamento de ${doc.reference || doc.id}.`);
+      const response = await fetch('/api/fiscal/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: doc.id, reason }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Erro ao cancelar NFC-e.');
+      success('NFC-e cancelada', `Documento fiscal: ${result.document.status}.`);
+      await loadFiscalData();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Falha no cancelamento.';
+      error('Cancelamento fiscal falhou', msg);
+    }
   };
 
   return (
@@ -298,12 +320,12 @@ export default function AdminFiscalPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5">
-                        {doc.status === 'EMITTED' ? (
+                        {['EMITTED', 'authorized'].includes(doc.status) ? (
                           <>
                             <CheckCircle className="w-4 h-4 text-emerald-500" />
                             <span className="text-xs text-emerald-500 font-bold">AUTORIZADA</span>
                           </>
-                        ) : doc.status === 'ERROR' ? (
+                        ) : ['ERROR', 'error', 'rejected'].includes(doc.status) ? (
                           <>
                             <XCircle className="w-4 h-4 text-brand-red" />
                             <span className="text-xs text-brand-red font-bold">REJEITADA</span>
@@ -336,10 +358,17 @@ export default function AdminFiscalPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="secondary" size="sm" onClick={() => handleCheckStatus(doc)}>
-                        <RefreshCw className="w-3 h-3 mr-1" />
-                        Status
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="secondary" size="sm" onClick={() => handleCheckStatus(doc)}>
+                          <RefreshCw className="w-3 h-3 mr-1" />
+                          Status
+                        </Button>
+                        {['EMITTED', 'authorized'].includes(doc.status) && (
+                          <Button variant="secondary" size="sm" onClick={() => handleCancel(doc)}>
+                            Cancelar
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -114,12 +114,14 @@ Acesse o endereço [http://localhost:3000](http://localhost:3000) no seu navegad
 ## ⚙️ Stripe Test & NFC-e (Configuração e Testes)
 
 * **Stripe**: Configurado para funcionar inicialmente em modo de teste (`STRIPE_MODE=test`).
-* **Módulo Fiscal (NFC-e MT)**: O sistema de emissão fiscal suporta três ambientes: `mock` (padrão), `homologation` (homologação) e `production` (produção). O ambiente de produção está **bloqueado** por padrão.
+* **Módulo Fiscal (NFC-e MT)**: O sistema de emissão fiscal usa provider `mock` ou `focusnfe`. O padrão seguro é `FISCAL_PROVIDER=mock`, `FISCAL_ENVIRONMENT=mock` e `FISCAL_PRODUCTION_ENABLED=false`. Veja `docs/FISCAL_FOCUS_NFE.md`.
 
 ### Variáveis de Ambiente Fiscal (.env ou Vercel)
 Adicione as seguintes chaves no seu arquivo de ambiente local ou nas variáveis de deploy da Vercel (Secrets do Servidor):
 ```env
 FISCAL_ENVIRONMENT=mock
+FISCAL_PROVIDER=mock
+FISCAL_PRODUCTION_ENABLED=false
 FISCAL_UF=MT
 FISCAL_MODEL=65
 FISCAL_CNPJ=00.000.000/0001-00
@@ -131,6 +133,8 @@ FISCAL_CSC=token_csc_da_sefaz_mt
 FISCAL_CSC_ID=000001
 FISCAL_NFCE_SERIES=1
 FISCAL_NFCE_START_NUMBER=1
+FOCUS_NFE_HOMOLOGATION_TOKEN=
+FOCUS_NFE_PRODUCTION_TOKEN=
 ```
 
 ### Como Executar os Testes Unitários Fiscais
@@ -142,7 +146,7 @@ npm run test:fiscal
 ### Como Testar a Emissão Simulada (Mock)
 1. Faça login como **OWNER** no painel administrativo (`admin@tecnomotos.com.br`).
 2. Acesse a rota `/admin/fiscal` (NFC-e).
-3. Na seção **Simular Emissão por Pedidos Pendentes**, clique em **Emitir NFC-e** em qualquer um dos pedidos fictícios.
+3. Na seção de pedidos pagos pendentes, clique em **Emitir NFC-e** em um pedido real.
 4. O sistema gerará a estrutura XML em tempo real, validará as regras e registrará a nota autorizada em `fiscal_documents` e `fiscal_events`.
 5. Você poderá ver os links para baixar o **XML** e visualizar o **DANFE (PDF)** simulados.
 6. Acesse a sub-rota `/admin/fiscal/configuracoes` para gerenciar os dados da empresa, limites numéricos, trocar de ambiente e rodar o botão **Testar Conexão com SEFAZ**.
@@ -156,4 +160,3 @@ O projeto está totalmente preparado para deploy na Vercel:
 2. Em **Environment Variables**, configure as variáveis do banco Supabase, Stripe e chaves fiscais (`FISCAL_ENVIRONMENT=mock`).
 3. O build de produção será executado com testes de lint e typecheck.
 4. Faça a requisição `POST` em `/api/auth/bootstrap` para ativar o primeiro proprietário.
-
