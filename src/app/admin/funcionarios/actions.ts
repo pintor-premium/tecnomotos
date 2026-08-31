@@ -77,7 +77,7 @@ export async function createEmployeeAction(input: CreateEmployeeInput) {
       .single();
 
     if (roleErr || !employeeRole) {
-      return { success: false, error: roleErr?.message || 'Role EMPLOYEE nao encontrada.' };
+      return { success: false, error: roleErr?.message || 'Perfil de funcionário não encontrado.' };
     }
 
     await adminClient

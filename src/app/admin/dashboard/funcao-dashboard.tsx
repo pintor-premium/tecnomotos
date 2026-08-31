@@ -10,7 +10,7 @@ type DashboardKind = 'SELLER' | 'MECHANIC' | 'CASHIER' | 'FINANCIAL';
 
 const configs = {
   SELLER: {
-    title: 'Dashboard do Vendedor',
+    title: 'Painel do Vendedor',
     description: 'Atalhos comerciais, clientes e pedidos',
     badge: 'Vendedor',
     links: [
@@ -20,17 +20,17 @@ const configs = {
     ]
   },
   MECHANIC: {
-    title: 'Dashboard do Mecanico',
+    title: 'Painel do Mecânico',
     description: 'Ordens de servico, motocicletas e andamento da oficina',
     badge: 'Mecanico',
     links: [
-      { href: '/admin/oficina', label: 'Ordens de Servico' },
+      { href: '/admin/oficina', label: 'Ordens de Serviço' },
       { href: '/admin/clientes', label: 'Clientes' },
       { href: '/admin/estoque', label: 'Estoque' }
     ]
   },
   CASHIER: {
-    title: 'Dashboard do Caixa',
+    title: 'Painel do Caixa',
     description: 'Recebimentos, pedidos pagos e fluxo operacional',
     badge: 'Caixa',
     links: [
@@ -40,7 +40,7 @@ const configs = {
     ]
   },
   FINANCIAL: {
-    title: 'Dashboard Financeiro',
+    title: 'Painel Financeiro',
     description: 'Fluxo de caixa, receitas, despesas e acompanhamento financeiro',
     badge: 'Financeiro',
     links: [
@@ -77,13 +77,13 @@ export async function FunctionDashboard({ kind }: { kind: DashboardKind }) {
     { title: 'Pedidos Pagos', value: String(paidOrdersCount || 0), icon: ShoppingBag, color: 'text-emerald-400' },
     { title: 'Faturamento', value: formatMoney(revenue), icon: DollarSign, color: 'text-emerald-400' },
     { title: 'OS Ativas', value: String(activeServiceOrders || 0), icon: Wrench, color: 'text-brand-red' },
-    { title: 'Estoque Critico', value: String(lowStockCount || 0), icon: Warehouse, color: 'text-yellow-400' }
+    { title: 'Estoque Crítico', value: String(lowStockCount || 0), icon: Warehouse, color: 'text-yellow-400' }
   ];
 
   return (
     <div className="space-y-6 text-left">
       <div>
-        <Breadcrumb items={[{ label: 'Dashboard' }, { label: config.badge }]} />
+        <Breadcrumb items={[{ label: 'Painel' }, { label: config.badge }]} />
         <div className="flex justify-between items-center mt-2 border-b border-brand-grey/15 pb-4">
           <div>
             <h1 className="text-2xl font-black italic uppercase tracking-tight text-white">
@@ -120,7 +120,7 @@ export async function FunctionDashboard({ kind }: { kind: DashboardKind }) {
 
       <Card className="space-y-4">
         <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-white border-b border-brand-grey/15 pb-2">
-          Acesso Rapido
+          Acesso Rápido
         </h3>
         <div className="flex flex-wrap gap-3">
           {config.links.map((link) => (

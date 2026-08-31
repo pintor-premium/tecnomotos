@@ -24,7 +24,7 @@ export default function AccessDeniedPage() {
           </h1>
           
           <p className="text-xs font-mono text-brand-grey uppercase tracking-widest mb-6">
-            Erro 403: Forbidden
+            Erro 403: Acesso proibido
           </p>
 
           <p className="text-sm text-brand-silver mb-8 max-w-xs leading-relaxed">
@@ -32,7 +32,7 @@ export default function AccessDeniedPage() {
           </p>
 
           <Button variant="primary" href="/admin/dashboard" className="w-full">
-            Voltar ao Dashboard
+            Voltar ao Painel
           </Button>
         </div>
         

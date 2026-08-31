@@ -24,7 +24,7 @@ export function Navbar({ isAuthenticated = false, userRole = 'CUSTOMER' }: Navba
     : '/cliente';
 
   const navLinks = [
-    { label: 'Home', href: '/' },
+    { label: 'Início', href: '/' },
     { label: 'Loja', href: '/loja' },
     { label: 'Pe\u00e7as', href: '/produtos' },
     { label: 'Servi\u00e7os', href: '/oficina' },

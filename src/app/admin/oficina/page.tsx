@@ -560,7 +560,13 @@ export default function AdminWorkshopPage() {
 
       if (err) throw err;
 
-      success('Status Atualizado', `Ordem de serviço movida para ${status}.`);
+      const statusLabels = {
+        PENDING: 'Pendente',
+        IN_PROGRESS: 'Em andamento',
+        COMPLETED: 'Concluida',
+        CANCELLED: 'Cancelada'
+      };
+      success('Status Atualizado', `Ordem de serviço movida para ${statusLabels[status]}.`);
       setIsDetailModalOpen(false);
       await fetchServiceOrders();
     } catch (err: any) {

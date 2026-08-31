@@ -15,6 +15,11 @@ export function Topbar({ userEmail = '', userRole = '' }: TopbarProps) {
   const router = useRouter();
   const supabase = createClient();
   const { success, error } = useToast();
+  const roleLabels: Record<string, string> = {
+    OWNER: 'Proprietário',
+    EMPLOYEE: 'Funcionário',
+    CUSTOMER: 'Cliente'
+  };
 
   const handleSignOut = async () => {
     try {
@@ -56,7 +61,7 @@ export function Topbar({ userEmail = '', userRole = '' }: TopbarProps) {
           <div className="text-right">
             <p className="text-xs font-bold leading-none font-sans">{userEmail}</p>
             <span className="text-[9px] font-mono uppercase tracking-widest text-brand-red font-bold mt-1 inline-block">
-              {userRole}
+              {roleLabels[userRole] || userRole}
             </span>
           </div>
 

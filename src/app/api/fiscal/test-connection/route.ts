@@ -17,7 +17,7 @@ export async function POST() {
 
     if (roleError || !isOwner) {
       return NextResponse.json(
-        { error: 'Acesso negado: Somente proprietarios OWNER podem testar conexoes fiscais.' },
+        { error: 'Acesso negado: Somente proprietários podem testar conexões fiscais.' },
         { status: 403 }
       );
     }

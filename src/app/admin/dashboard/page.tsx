@@ -23,6 +23,12 @@ interface OrderRow {
 
 const money = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const asNumber = (value: number | string | null | undefined) => parseFloat(String(value ?? 0)) || 0;
+const serviceStatusLabels: Record<string, string> = {
+  PENDING: 'Pendente',
+  IN_PROGRESS: 'Em andamento',
+  COMPLETED: 'Concluido',
+  CANCELLED: 'Cancelado'
+};
 
 async function fetchOptional<T>(query: PromiseLike<{ data: T[] | null; error: any }>, tableName: string) {
   const result = await query;
@@ -124,7 +130,7 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-6 text-left">
       <div>
-        <Breadcrumb items={[{ label: 'Dashboard' }]} />
+        <Breadcrumb items={[{ label: 'Painel' }]} />
         <div className="flex justify-between items-center mt-2 border-b border-brand-grey/15 pb-4">
           <div>
             <h1 className="text-2xl font-black italic uppercase tracking-tight text-white">
@@ -175,7 +181,7 @@ export default async function AdminDashboardPage() {
                 <li key={order.id} className="flex justify-between items-center p-2 bg-brand-darkgrey/50 border-l-2 border-brand-red gap-3">
                   <span>{order.service_type}</span>
                   <Badge variant={order.status === 'COMPLETED' ? 'success' : order.status === 'CANCELLED' ? 'danger' : 'warning'}>
-                    {order.status}
+                    {serviceStatusLabels[order.status] || order.status}
                   </Badge>
                 </li>
               ))}

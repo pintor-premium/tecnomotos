@@ -61,7 +61,7 @@ export default function AdminFiscalSettingsPage() {
       });
 
       if (!isOwner) {
-        error('Acesso Negado', 'Somente administradores OWNER possuem acesso a esta página.');
+        error('Acesso Negado', 'Somente proprietários possuem acesso a esta página.');
         router.push('/admin/fiscal');
         return;
       }
@@ -213,7 +213,7 @@ export default function AdminFiscalSettingsPage() {
           </div>
           <Badge variant="neutral" className="flex items-center gap-1">
             <Lock className="w-3 h-3" />
-            Acesso Restrito OWNER
+            Acesso Restrito ao Proprietário
           </Badge>
         </div>
       </div>

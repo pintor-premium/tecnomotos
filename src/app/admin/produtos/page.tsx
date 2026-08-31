@@ -409,7 +409,7 @@ export default function AdminProductsPage() {
           ) : (
             <div className="flex items-center gap-2 text-brand-grey text-xs font-mono bg-brand-darkgrey p-2 border border-brand-grey/10">
               <ShieldAlert className="w-4 h-4 text-brand-red" />
-              <span>Apenas OWNER pode criar produtos / gerenciar preços.</span>
+              <span>Apenas o proprietário pode criar produtos / gerenciar preços.</span>
             </div>
           )}
         </div>

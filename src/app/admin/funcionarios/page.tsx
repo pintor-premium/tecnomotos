@@ -30,9 +30,14 @@ interface Employee {
 
 const functionLabels: Record<EmployeeFunction, string> = {
   SELLER: 'Vendedor',
-  MECHANIC: 'Mecanico',
+  MECHANIC: 'Mecânico',
   CASHIER: 'Caixa',
   FINANCIAL: 'Financeiro'
+};
+const profileStatusLabels: Record<string, string> = {
+  ACTIVE: 'Ativo',
+  INACTIVE: 'Inativo',
+  BLOCKED: 'Bloqueado'
 };
 
 export default function AdminEmployeesPage() {
@@ -219,7 +224,7 @@ export default function AdminEmployeesPage() {
           ) : (
             <div className="flex items-center gap-2 text-brand-grey text-xs font-mono bg-brand-darkgrey p-2 border border-brand-grey/10">
               <ShieldAlert className="w-4 h-4 text-brand-red" />
-              <span>Apenas OWNER pode gerenciar a equipe de funcionarios.</span>
+              <span>Apenas o proprietário pode gerenciar a equipe de funcionários.</span>
             </div>
           )}
         </div>
@@ -257,7 +262,7 @@ export default function AdminEmployeesPage() {
                   <TableCell>{emp.employee_function ? functionLabels[emp.employee_function] : '-'}</TableCell>
                   <TableCell>
                     <Badge variant={emp.profiles?.status === 'ACTIVE' ? 'success' : 'danger'}>
-                      {emp.profiles?.status || 'ACTIVE'}
+                      {profileStatusLabels[emp.profiles?.status || 'ACTIVE'] || emp.profiles?.status || 'Ativo'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -410,7 +415,7 @@ export default function AdminEmployeesPage() {
               FUNCIONARIO REGISTRADO COM SUCESSO!
             </h3>
             <p className="text-[11px] text-brand-grey leading-normal">
-              O acesso foi criado como EMPLOYEE. O funcionario ja pode entrar com o e-mail e a senha cadastrados.
+              O acesso foi criado como funcionario. O funcionario ja pode entrar com o e-mail e a senha cadastrados.
             </p>
           </div>
         </div>

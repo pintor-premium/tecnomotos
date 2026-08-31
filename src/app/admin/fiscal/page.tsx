@@ -59,6 +59,18 @@ interface PendingFiscalOrder {
 
 const money = (value: number | string) =>
   (parseFloat(String(value)) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const fiscalStatusLabels: Record<string, string> = {
+  pending: 'Pendente',
+  processing: 'Em processamento',
+  authorized: 'Autorizada',
+  rejected: 'Rejeitada',
+  cancelled: 'Cancelada',
+  contingency: 'Contingencia',
+  error: 'Erro',
+  EMITTED: 'Autorizada',
+  CANCELLED: 'Cancelada',
+  ERROR: 'Erro'
+};
 
 export default function AdminFiscalPage() {
   const router = useRouter();
@@ -191,7 +203,7 @@ export default function AdminFiscalPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Erro ao consultar NFC-e.');
-      success('Status atualizado', `Documento fiscal: ${result.document.status}.`);
+      success('Situacao atualizada', `Documento fiscal: ${fiscalStatusLabels[result.document.status] || result.document.status}.`);
       await loadFiscalData();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Falha na consulta.';
@@ -212,7 +224,7 @@ export default function AdminFiscalPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Erro ao cancelar NFC-e.');
-      success('NFC-e cancelada', `Documento fiscal: ${result.document.status}.`);
+      success('NFC-e cancelada', `Documento fiscal: ${fiscalStatusLabels[result.document.status] || result.document.status}.`);
       await loadFiscalData();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Falha no cancelamento.';
@@ -306,7 +318,7 @@ export default function AdminFiscalPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nota / Serie</TableHead>
-                  <TableHead>Status Sefaz</TableHead>
+                  <TableHead>Situacao Sefaz</TableHead>
                   <TableHead>Data de Emissao</TableHead>
                   <TableHead>Documentos</TableHead>
                   <TableHead className="text-right">Acoes</TableHead>
@@ -361,7 +373,7 @@ export default function AdminFiscalPage() {
                       <div className="flex justify-end gap-2">
                         <Button variant="secondary" size="sm" onClick={() => handleCheckStatus(doc)}>
                           <RefreshCw className="w-3 h-3 mr-1" />
-                          Status
+                          Consultar
                         </Button>
                         {['EMITTED', 'authorized'].includes(doc.status) && (
                           <Button variant="secondary" size="sm" onClick={() => handleCancel(doc)}>

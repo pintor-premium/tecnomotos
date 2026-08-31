@@ -70,7 +70,7 @@ export function Sidebar({ userRole = 'CUSTOMER', userPermissions = [], employeeF
   const menuGroups: MenuGroup[] = [
     {
       items: [
-        { label: 'Dashboard', href: dashboardHref, icon: LayoutDashboard, permission: 'dashboard.view' },
+        { label: 'Painel', href: dashboardHref, icon: LayoutDashboard, permission: 'dashboard.view' },
       ],
     },
     {

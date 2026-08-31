@@ -42,7 +42,7 @@ export default async function AdminDiscountsPage() {
           ) : (
             <div className="flex items-center gap-2 text-brand-grey text-xs font-mono bg-brand-darkgrey p-2 border border-brand-grey/10">
               <ShieldAlert className="w-4 h-4 text-brand-red" />
-              <span>Apenas OWNER pode criar ou gerenciar descontos.</span>
+              <span>Apenas o proprietário pode criar ou gerenciar descontos.</span>
             </div>
           )}
         </div>
