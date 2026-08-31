@@ -1121,7 +1121,7 @@ export default function AdminCustomersPage() {
 
                 <div className="space-y-4 pt-2">
                   <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-brand-red border-b border-brand-grey/10 pb-1">
-                    Endereco Primario
+                    Endereço Primário
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-1 md:col-span-2">
@@ -1133,7 +1133,7 @@ export default function AdminCustomersPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-mono text-brand-grey uppercase">Numero</label>
+                      <label className="text-[10px] font-mono text-brand-grey uppercase">Número</label>
                       <Input
                         placeholder="Ex: 123"
                         value={addrNumber}

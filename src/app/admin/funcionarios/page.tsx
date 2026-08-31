@@ -93,7 +93,7 @@ export default function AdminEmployeesPage() {
         profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
       })));
     } catch (err: any) {
-      error('Erro ao carregar funcionarios', err.message || 'Falha ao buscar equipe.');
+      error('Erro ao carregar funcionários', err.message || 'Falha ao buscar equipe.');
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +149,7 @@ export default function AdminEmployeesPage() {
   const handleCreateEmployee = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!fullName || !email || !password || !confirmPassword || !cpf || !phone || !street || !number || !neighborhood || !city || !state || !postalCode) {
-      error('Campos Obrigatorios', 'Preencha nome, CPF, contato, senha, endereco e funcao.');
+      error('Campos Obrigatórios', 'Preencha nome, CPF, contato, senha, endereço e função.');
       return;
     }
 
@@ -182,7 +182,7 @@ export default function AdminEmployeesPage() {
     setIsSaving(false);
 
     if (!res.success) {
-      error('Erro ao cadastrar', res.error || 'Falha ao registrar funcionario.');
+      error('Erro ao cadastrar', res.error || 'Falha ao registrar funcionário.');
       return;
     }
 
@@ -190,21 +190,21 @@ export default function AdminEmployeesPage() {
     setIsModalOpen(false);
     setShowSuccessOverlay(true);
     setTimeout(() => setShowSuccessOverlay(false), 5000);
-    success('Funcionario Cadastrado', 'O funcionario foi registrado no Supabase.');
+    success('Funcionário Cadastrado', 'O funcionário foi registrado no Supabase.');
     await fetchEmployees();
   };
 
   return (
     <div className="space-y-6 text-left">
       <div>
-        <Breadcrumb items={[{ label: 'Equipe' }, { label: 'Funcionarios' }]} />
+        <Breadcrumb items={[{ label: 'Equipe' }, { label: 'Funcionários' }]} />
         <div className="flex justify-between items-center mt-2 border-b border-brand-grey/15 pb-4">
           <div>
             <h1 className="text-2xl font-black italic uppercase tracking-tight text-white">
               Gestao de Equipe
             </h1>
             <p className="text-xs text-brand-grey uppercase tracking-widest font-mono mt-1">
-              Controle de acesso e funcionarios da plataforma
+              Controle de acesso e funcionários da plataforma
             </p>
           </div>
           <Badge variant="neutral">Controle de Equipe</Badge>
@@ -215,12 +215,12 @@ export default function AdminEmployeesPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-brand-grey/15 pb-4">
           <div>
             <h4 className="text-xs font-bold font-mono uppercase tracking-wider text-white">
-              Funcionarios Cadastrados
+              Funcionários Cadastrados
             </h4>
             <p className="text-[11px] text-brand-grey mt-0.5">Gestao de operadores vinculados ao sistema.</p>
           </div>
           {isOwner ? (
-            <Button size="sm" onClick={() => setIsModalOpen(true)}>Registrar Funcionario</Button>
+            <Button size="sm" onClick={() => setIsModalOpen(true)}>Registrar Funcionário</Button>
           ) : (
             <div className="flex items-center gap-2 text-brand-grey text-xs font-mono bg-brand-darkgrey p-2 border border-brand-grey/10">
               <ShieldAlert className="w-4 h-4 text-brand-red" />
@@ -237,7 +237,7 @@ export default function AdminEmployeesPage() {
           </div>
         ) : employees.length === 0 ? (
           <div className="py-12 text-center text-brand-grey font-mono text-xs">
-            Nenhum funcionario cadastrado.
+            Nenhum funcionário cadastrado.
           </div>
         ) : (
           <Table>
@@ -249,7 +249,7 @@ export default function AdminEmployeesPage() {
                 <TableHead>CPF</TableHead>
                 <TableHead>Funcao</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Acoes</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -295,7 +295,7 @@ export default function AdminEmployeesPage() {
             <div>
               <h3 className="text-lg font-black italic uppercase tracking-tight text-white flex items-center gap-2">
                 <Briefcase className="w-5 h-5 text-brand-red" />
-                Registrar Funcionario
+                Registrar Funcionário
               </h3>
               <p className="text-[10px] text-brand-grey font-mono uppercase tracking-widest mt-1">
                 Cadastre o operador e defina sua funcao principal
@@ -305,7 +305,7 @@ export default function AdminEmployeesPage() {
             <form onSubmit={handleCreateEmployee} className="space-y-6 text-left">
               <div className="space-y-4">
                 <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-brand-red border-b border-brand-grey/10 pb-1">
-                  Dados do Funcionario
+                  Dados do Funcionário
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -340,7 +340,7 @@ export default function AdminEmployeesPage() {
                       className="w-full text-xs font-mono bg-brand-input border border-brand-grey/25 text-white rounded px-3 py-2 focus:outline-none focus:border-brand-red"
                     >
                       <option value="SELLER">Vendedor</option>
-                      <option value="MECHANIC">Mecanico</option>
+                      <option value="MECHANIC">Mecânico</option>
                       <option value="CASHIER">Caixa</option>
                       <option value="FINANCIAL">Financeiro</option>
                     </select>
@@ -350,7 +350,7 @@ export default function AdminEmployeesPage() {
 
               <div className="space-y-4">
                 <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-brand-red border-b border-brand-grey/10 pb-1">
-                  Endereco
+                  Endereço
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-1 md:col-span-2">
@@ -358,7 +358,7 @@ export default function AdminEmployeesPage() {
                     <Input value={street} onChange={(e) => setStreet(e.target.value)} required />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-mono text-brand-grey uppercase">Numero</label>
+                    <label className="text-[10px] font-mono text-brand-grey uppercase">Número</label>
                     <Input value={number} onChange={(e) => setNumber(e.target.value)} required />
                   </div>
                   <div className="space-y-1">
@@ -391,7 +391,7 @@ export default function AdminEmployeesPage() {
                   onClick={() => {
                     setIsModalOpen(false);
                     resetForm();
-                    info('Cadastro cancelado', 'Nenhum funcionario foi registrado.');
+                    info('Cadastro cancelado', 'Nenhum funcionário foi registrado.');
                   }}
                 >
                   CANCELAR
@@ -415,7 +415,7 @@ export default function AdminEmployeesPage() {
               FUNCIONARIO REGISTRADO COM SUCESSO!
             </h3>
             <p className="text-[11px] text-brand-grey leading-normal">
-              O acesso foi criado como funcionario. O funcionario ja pode entrar com o e-mail e a senha cadastrados.
+              O acesso foi criado como funcionário. O funcionário já pode entrar com o e-mail e a senha cadastrados.
             </p>
           </div>
         </div>

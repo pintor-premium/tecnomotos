@@ -252,7 +252,7 @@ export default function AdminReportsPage() {
         employeeCount: employeeCountRes.count || 0
       });
     } catch (err: any) {
-      error('Erro ao carregar relatorios', err.message || 'Nao foi possivel consultar os dados.');
+      error('Erro ao carregar relatórios', err.message || 'Não foi possível consultar os dados.');
     } finally {
       setIsLoading(false);
     }
@@ -290,7 +290,7 @@ export default function AdminReportsPage() {
         id: `service-${order.id}`,
         type: 'INCOME',
         status: 'PAID',
-        category: 'Servico de Oficina',
+        category: 'Serviço de Oficina',
         description: `OS #${order.id.slice(0, 8).toUpperCase()} - ${order.service_type}`,
         amount: order.total_price,
         payment_method: 'Oficina',
@@ -351,7 +351,7 @@ export default function AdminReportsPage() {
         { indicador: 'Saidas financeiras', valor: metrics.expenses },
         { indicador: 'Saldo', valor: metrics.netCash },
         { indicador: 'Clientes cadastrados', valor: data.customerCount },
-        { indicador: 'Funcionarios cadastrados', valor: data.employeeCount },
+        { indicador: 'Funcionários cadastrados', valor: data.employeeCount },
         { indicador: 'Produtos com estoque baixo', valor: metrics.lowStockCount }
       ]);
     }
@@ -367,7 +367,7 @@ export default function AdminReportsPage() {
     if (activeTab === 'workshop') {
       downloadCsv(`relatorio-oficina-${today}.csv`, scoped.serviceOrders.map((order) => ({
         id: order.id,
-        servico: order.service_type,
+        serviço: order.service_type,
         status: order.status,
         total: asNumber(order.total_price),
         data: order.created_at
@@ -379,7 +379,7 @@ export default function AdminReportsPage() {
         tipo: entry.type,
         status: entry.status,
         categoria: entry.category,
-        descricao: entry.description,
+        descrição: entry.description,
         valor: asNumber(entry.amount),
         origem: entry.source,
         data: entry.created_at
@@ -392,7 +392,7 @@ export default function AdminReportsPage() {
         marca: product.brand,
         estoque: product.stock_quantity,
         minimo: product.min_stock_quantity,
-        preco: asNumber(product.price),
+        preço: asNumber(product.price),
         valor_total: asNumber(product.price) * (product.stock_quantity || 0),
         stripe: product.stripe_sync_status
       })));
@@ -407,7 +407,7 @@ export default function AdminReportsPage() {
         data: audit.created_at
       })));
     }
-    success('Relatorio exportado', 'O arquivo CSV foi gerado.');
+    success('Relatório exportado', 'O arquivo CSV foi gerado.');
   };
 
   const metricCards = [
@@ -416,17 +416,17 @@ export default function AdminReportsPage() {
     { label: 'Saldo Financeiro', value: money(metrics.netCash), detail: `${money(metrics.income)} entradas`, icon: metrics.netCash >= 0 ? ArrowUpCircle : ArrowDownCircle, tone: metrics.netCash >= 0 ? 'text-emerald-400' : 'text-brand-red' },
     { label: 'Valor em Estoque', value: money(metrics.inventoryValue), detail: `${metrics.lowStockCount} produtos no minimo`, icon: Package, tone: 'text-yellow-500' },
     { label: 'Orcamentos', value: money(metrics.quoteTotal), detail: `${metrics.approvedQuotes} aprovados`, icon: ClipboardList, tone: 'text-blue-400' },
-    { label: 'Auditoria', value: String(scoped.audits.length), detail: 'logs no periodo', icon: ShieldCheck, tone: 'text-brand-grey' }
+    { label: 'Auditoria', value: String(scoped.audits.length), detail: 'logs no período', icon: ShieldCheck, tone: 'text-brand-grey' }
   ];
 
   return (
     <div className="space-y-6 text-left">
       <div>
-        <Breadcrumb items={[{ label: 'Relatorios' }]} />
+        <Breadcrumb items={[{ label: 'Relatórios' }]} />
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mt-2 border-b border-brand-grey/15 pb-4">
           <div>
             <h1 className="text-2xl font-black italic uppercase tracking-tight text-white">
-              Relatorios & Auditoria
+              Relatórios & Auditoria
             </h1>
             <p className="text-xs text-brand-grey uppercase tracking-widest font-mono mt-1">
               Consulte indicadores comerciais, oficina, caixa, estoque e logs reais do sistema
@@ -447,7 +447,7 @@ export default function AdminReportsPage() {
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6">
           <div className="relative w-full max-w-md">
             <Input
-              placeholder="Buscar em relatorios, logs, produtos ou clientes..."
+              placeholder="Buscar em relatórios, logs, produtos ou clientes..."
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               className="pl-9 text-xs font-mono bg-brand-input"
@@ -505,34 +505,34 @@ export default function AdminReportsPage() {
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 <ReportPanel title="Resumo Operacional">
                   <MetricLine label="Clientes cadastrados" value={data.customerCount} />
-                  <MetricLine label="Funcionarios cadastrados" value={data.employeeCount} />
-                  <MetricLine label="Pedidos no periodo" value={scoped.orders.length} />
-                  <MetricLine label="Ordens de servico no periodo" value={scoped.serviceOrders.length} />
+                  <MetricLine label="Funcionários cadastrados" value={data.employeeCount} />
+                  <MetricLine label="Pedidos no período" value={scoped.orders.length} />
+                  <MetricLine label="Ordens de serviço no período" value={scoped.serviceOrders.length} />
                   <MetricLine label="Produtos cadastrados" value={data.products.length} />
                 </ReportPanel>
                 <ReportPanel title="Alertas Inteligentes">
                   <AlertLine tone={metrics.lowStockCount > 0 ? 'warning' : 'success'} text={`${metrics.lowStockCount} produto(s) com estoque no minimo.`} />
-                  <AlertLine tone={metrics.serviceOpen > 0 ? 'warning' : 'success'} text={`${metrics.serviceOpen} ordem(ns) de servico pendentes ou em andamento.`} />
-                  <AlertLine tone={metrics.netCash >= 0 ? 'success' : 'danger'} text={`Saldo consolidado do periodo: ${money(metrics.netCash)}.`} />
-                  <AlertLine tone="info" text={`${scoped.quotations.length} orcamento(s) consultados no periodo.`} />
+                  <AlertLine tone={metrics.serviceOpen > 0 ? 'warning' : 'success'} text={`${metrics.serviceOpen} ordem(ns) de serviço pendentes ou em andamento.`} />
+                  <AlertLine tone={metrics.netCash >= 0 ? 'success' : 'danger'} text={`Saldo consolidado do período: ${money(metrics.netCash)}.`} />
+                  <AlertLine tone="info" text={`${scoped.quotations.length} orçamento(s) consultados no período.`} />
                 </ReportPanel>
               </div>
             )}
 
             {activeTab === 'sales' && (
-              <ReportPanel title="Relatorio Comercial">
+              <ReportPanel title="Relatório Comercial">
                 <DataTable
-                  empty="Nenhum pedido ou orcamento encontrado no periodo."
+                  empty="Nenhum pedido ou orçamento encontrado no período."
                   rows={[
                     ...scoped.orders.map((order) => ({
-                      codigo: `Pedido ${order.id.slice(0, 8).toUpperCase()}`,
+                      código: `Pedido ${order.id.slice(0, 8).toUpperCase()}`,
                       cliente: order.customer_email,
                       status: order.status,
                       valor: money(asNumber(order.total_amount)),
                       data: new Date(order.created_at).toLocaleDateString('pt-BR')
                     })),
                     ...scoped.quotations.map((quotation) => ({
-                      codigo: `Orcamento ${quotation.id.slice(0, 8).toUpperCase()}`,
+                      código: `Orçamento ${quotation.id.slice(0, 8).toUpperCase()}`,
                       cliente: quotation.customer_name || 'Sem cliente',
                       status: quotation.status,
                       valor: money(asNumber(quotation.total_amount)),
@@ -544,12 +544,12 @@ export default function AdminReportsPage() {
             )}
 
             {activeTab === 'workshop' && (
-              <ReportPanel title="Relatorio de Oficina">
+              <ReportPanel title="Relatório de Oficina">
                 <DataTable
-                  empty="Nenhuma ordem de servico encontrada no periodo."
+                  empty="Nenhuma ordem de serviço encontrada no período."
                   rows={scoped.serviceOrders.map((order) => ({
-                    codigo: `OS ${order.id.slice(0, 8).toUpperCase()}`,
-                    servico: order.service_type,
+                    código: `OS ${order.id.slice(0, 8).toUpperCase()}`,
+                    serviço: order.service_type,
                     status: order.status,
                     valor: money(asNumber(order.total_price)),
                     data: new Date(order.created_at).toLocaleDateString('pt-BR')
@@ -566,11 +566,11 @@ export default function AdminReportsPage() {
                   <SummaryBox label="Saldo" value={money(metrics.netCash)} tone={metrics.netCash >= 0 ? 'text-emerald-400' : 'text-brand-red'} />
                 </div>
                 <DataTable
-                  empty="Nenhum lancamento financeiro encontrado no periodo."
+                  empty="Nenhum lançamento financeiro encontrado no período."
                   rows={scoped.financial.map((entry) => ({
                     tipo: entry.type === 'INCOME' ? 'Entrada' : 'Saida',
                     categoria: entry.category,
-                    descricao: entry.description,
+                    descrição: entry.description,
                     valor: money(asNumber(entry.amount)),
                     origem: entry.source,
                     data: new Date(entry.created_at).toLocaleDateString('pt-BR')
@@ -580,7 +580,7 @@ export default function AdminReportsPage() {
             )}
 
             {activeTab === 'inventory' && (
-              <ReportPanel title="Relatorio de Estoque">
+              <ReportPanel title="Relatório de Estoque">
                 <DataTable
                   empty="Nenhum produto encontrado."
                   rows={scoped.products.map((product) => ({
@@ -599,7 +599,7 @@ export default function AdminReportsPage() {
             {activeTab === 'audit' && (
               <ReportPanel title="Logs de Auditoria">
                 <DataTable
-                  empty="Nenhum log de auditoria encontrado no periodo."
+                  empty="Nenhum log de auditoria encontrado no período."
                   rows={scoped.audits.map((audit) => ({
                     usuario: auditUser(audit)?.email || '-',
                     acao: audit.action,

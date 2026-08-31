@@ -8,7 +8,7 @@ export async function POST() {
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     const { data: isOwner, error: roleError } = await supabase.rpc('is_owner', {

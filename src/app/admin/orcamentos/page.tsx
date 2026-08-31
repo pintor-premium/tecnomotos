@@ -296,7 +296,7 @@ export default function AdminQuotationsPage() {
   const handleCreateQuotation = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!canCreate) {
-      error('Sem permissao', 'Voce nao tem permissao para criar orcamentos.');
+      error('Sem permissão', 'Você não tem permissão para criar orçamentos.');
       return;
     }
 
@@ -316,7 +316,7 @@ export default function AdminQuotationsPage() {
       .filter((item) => item.description && item.quantity > 0);
 
     if (cleanItems.length === 0) {
-      error('Itens obrigatorios', 'Adicione pelo menos um produto ou servico ao orcamento.');
+      error('Itens obrigatórios', 'Adicione pelo menos um produto ou serviço ao orçamento.');
       return;
     }
 
@@ -367,10 +367,10 @@ export default function AdminQuotationsPage() {
       setIsCreateModalOpen(false);
       resetForm();
       setShowSuccessOverlay(true);
-      success('Orcamento gerado', 'O orcamento foi salvo no banco de dados.');
+      success('Orçamento gerado', 'O orçamento foi salvo no banco de dados.');
       window.setTimeout(() => setShowSuccessOverlay(false), 2200);
     } catch (err: any) {
-      error('Erro ao gerar orcamento', err.message || 'Nao foi possivel salvar o orcamento.');
+      error('Erro ao gerar orçamento', err.message || 'Não foi possível salvar o orçamento.');
     } finally {
       setIsSaving(false);
     }
@@ -402,7 +402,7 @@ export default function AdminQuotationsPage() {
             </p>
           </div>
           <Button size="sm" onClick={() => setIsCreateModalOpen(true)} disabled={!canCreate}>
-            <Plus className="w-4 h-4" /> Novo Orcamento
+            <Plus className="w-4 h-4" /> Novo Orçamento
           </Button>
         </div>
       </div>
@@ -411,7 +411,7 @@ export default function AdminQuotationsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div className="relative w-full max-w-md">
             <Input
-              placeholder="Buscar por cliente, veiculo ou descricao..."
+              placeholder="Buscar por cliente, veículo ou descrição..."
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               className="pl-9 text-xs font-mono bg-brand-input"
@@ -447,16 +447,16 @@ export default function AdminQuotationsPage() {
         ) : filteredQuotations.length === 0 ? (
           <div className="py-16 text-center text-brand-grey">
             <ClipboardList className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <h3 className="text-sm font-black uppercase tracking-wider text-white">Nenhum orcamento registrado</h3>
+            <h3 className="text-sm font-black uppercase tracking-wider text-white">Nenhum orçamento registrado</h3>
             <p className="text-xs mt-2">Os orcamentos gerados aparecerao estruturados aqui.</p>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Orcamento</TableHead>
+                <TableHead>Orçamento</TableHead>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Veiculo</TableHead>
+                <TableHead>Veículo</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Validade</TableHead>
@@ -501,7 +501,7 @@ export default function AdminQuotationsPage() {
 
             <div>
               <h3 className="text-lg font-black italic uppercase tracking-tight text-white">
-                Gerar Orcamento
+                Gerar Orçamento
               </h3>
               <p className="text-[10px] text-brand-grey font-mono uppercase tracking-widest mt-1">
                 Monte uma proposta com cliente cadastrado ou atendimento avulso
@@ -525,7 +525,7 @@ export default function AdminQuotationsPage() {
                   }}
                   className={`px-3 py-2 text-[10px] font-mono uppercase border transition-colors ${!attachCustomer ? 'bg-brand-red border-brand-red text-white' : 'border-brand-grey/25 text-brand-grey hover:text-white'}`}
                 >
-                  Orcamento sem cliente
+                  Orçamento sem cliente
                 </button>
               </div>
 
@@ -563,7 +563,7 @@ export default function AdminQuotationsPage() {
                 )}
 
                 <div className="space-y-1 md:col-span-2">
-                  <label className="text-[10px] font-mono text-brand-grey uppercase">Titulo do orcamento</label>
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Título do orçamento</label>
                   <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Ex: Revisao geral Fazer 250" required />
                 </div>
                 <div className="space-y-1">
@@ -594,7 +594,7 @@ export default function AdminQuotationsPage() {
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between border-b border-brand-grey/10 pb-2">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-brand-red">Itens do orcamento</h4>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-brand-red">Itens do orçamento</h4>
                   <Button type="button" size="sm" variant="secondary" onClick={addItem}>
                     <Plus className="w-3.5 h-3.5" /> Adicionar Item
                   </Button>
@@ -608,7 +608,7 @@ export default function AdminQuotationsPage() {
                         onChange={(event) => updateItem(index, { item_type: event.target.value as QuotationItemType, product_id: '' })}
                         className="text-xs font-mono bg-brand-input border border-brand-grey/25 text-white rounded px-3 py-2 focus:outline-none focus:border-brand-red"
                       >
-                        <option value="SERVICE">Servico</option>
+                        <option value="SERVICE">Serviço</option>
                         <option value="PRODUCT">Produto</option>
                       </select>
                       {item.item_type === 'PRODUCT' ? (
@@ -623,7 +623,7 @@ export default function AdminQuotationsPage() {
                           ))}
                         </select>
                       ) : (
-                        <Input value={item.description} onChange={(event) => updateItem(index, { description: event.target.value })} placeholder="Descricao do servico" required />
+                        <Input value={item.description} onChange={(event) => updateItem(index, { description: event.target.value })} placeholder="Descrição do serviço" required />
                       )}
                       <Input inputMode="decimal" value={item.quantity} onChange={(event) => updateItem(index, { quantity: event.target.value })} placeholder="Qtd" required />
                       <Input inputMode="decimal" value={item.unit_price} onChange={(event) => updateItem(index, { unit_price: event.target.value })} placeholder="Valor" required />
@@ -665,13 +665,13 @@ export default function AdminQuotationsPage() {
                   onClick={() => {
                     setIsCreateModalOpen(false);
                     resetForm();
-                    info('Orcamento cancelado', 'Nenhum orcamento foi registrado.');
+                    info('Orçamento cancelado', 'Nenhum orçamento foi registrado.');
                   }}
                 >
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isSaving}>
-                  {isSaving ? 'Salvando...' : 'Salvar Orcamento'}
+                  {isSaving ? 'Salvando...' : 'Salvar Orçamento'}
                 </Button>
               </div>
             </form>

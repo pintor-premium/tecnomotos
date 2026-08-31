@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     const { data: hasPerm } = await supabase.rpc('has_permission', {
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
     const { documentId, reason } = await request.json();
     if (!documentId || !reason) {
-      return NextResponse.json({ error: 'Documento e justificativa sao obrigatorios.' }, { status: 400 });
+      return NextResponse.json({ error: 'Documento e justificativa são obrigatórios.' }, { status: 400 });
     }
 
     const fiscalService = new FiscalOperationService(createAdminClient());

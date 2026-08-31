@@ -563,7 +563,7 @@ export default function AdminWorkshopPage() {
       const statusLabels = {
         PENDING: 'Pendente',
         IN_PROGRESS: 'Em andamento',
-        COMPLETED: 'Concluida',
+        COMPLETED: 'Concluída',
         CANCELLED: 'Cancelada'
       };
       success('Status Atualizado', `Ordem de serviço movida para ${statusLabels[status]}.`);

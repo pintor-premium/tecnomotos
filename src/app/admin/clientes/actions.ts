@@ -98,7 +98,7 @@ export async function deleteCustomerAction(customerId: string) {
 
     const { data: { user: currentUser } } = await supabaseServer.auth.getUser();
     if (!currentUser) {
-      return { success: false, error: 'NÃ£o autorizado.' };
+      return { success: false, error: 'Não autorizado.' };
     }
 
     const { data: isOwner } = await supabaseServer.rpc('is_owner', {
@@ -106,11 +106,11 @@ export async function deleteCustomerAction(customerId: string) {
     });
 
     if (!isOwner) {
-      return { success: false, error: 'VocÃª nÃ£o tem permissÃ£o para excluir clientes.' };
+      return { success: false, error: 'Você não tem permissão para excluir clientes.' };
     }
 
     if (currentUser.id === customerId) {
-      return { success: false, error: 'VocÃª nÃ£o pode excluir o prÃ³prio cadastro.' };
+      return { success: false, error: 'Você não pode excluir o próprio cadastro.' };
     }
 
     const adminClient = createAdminClient();

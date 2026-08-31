@@ -9,7 +9,7 @@ export async function POST(request: Request) {
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     const { data: hasPerm, error: permError } = await supabase.rpc('has_permission', {
@@ -18,14 +18,14 @@ export async function POST(request: Request) {
     });
 
     if (permError || !hasPerm) {
-      return NextResponse.json({ error: 'Acesso negado: sem permissao para emitir notas fiscais' }, { status: 403 });
+      return NextResponse.json({ error: 'Acesso negado: sem permissão para emitir notas fiscais' }, { status: 403 });
     }
 
     const body = await request.json();
     const { orderId, customerName, customerDocument, paymentMethod } = body;
 
     if (!orderId) {
-      return NextResponse.json({ error: 'Pedido obrigatorio para emissao fiscal.' }, { status: 400 });
+      return NextResponse.json({ error: 'Pedido obrigatório para emissão fiscal.' }, { status: 400 });
     }
 
     const fiscalService = new FiscalOperationService(createAdminClient());
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       document: result.document
     });
   } catch (e: unknown) {
-    const errMsg = e instanceof Error ? e.message : 'Erro ao processar emissao fiscal';
+    const errMsg = e instanceof Error ? e.message : 'Erro ao processar emissão fiscal';
     return NextResponse.json({ error: errMsg }, { status: 500 });
   }
 }

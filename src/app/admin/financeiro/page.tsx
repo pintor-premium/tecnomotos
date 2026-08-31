@@ -70,7 +70,7 @@ const statusLabels: Record<FinancialStatus, string> = {
 const sourceLabels: Record<FinancialSource, string> = {
   MANUAL: 'Manual',
   ORDER: 'Pedido',
-  SERVICE_ORDER: 'Ordem de Servico',
+  SERVICE_ORDER: 'Ordem de Serviço',
   INVENTORY: 'Estoque',
   FISCAL: 'Fiscal'
 };
@@ -126,7 +126,7 @@ export default function AdminFinancialPage() {
         id: `service-${order.id}`,
         type: 'INCOME',
         status: 'PAID',
-        category: 'Servico de Oficina',
+        category: 'Serviço de Oficina',
         description: `OS #${order.id.slice(0, 8).toUpperCase()} - ${order.service_type}`,
         amount: parseFloat(String(order.total_price)) || 0,
         payment_method: 'Oficina',
@@ -237,7 +237,7 @@ export default function AdminFinancialPage() {
   const handleCreateEntry = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!category || !description || !amount) {
-      error('Campos Obrigatorios', 'Categoria, descricao e valor sao necessarios.');
+      error('Campos Obrigatórios', 'Categoria, descrição e valor são necessários.');
       return;
     }
 
@@ -267,7 +267,7 @@ export default function AdminFinancialPage() {
       setTimeout(() => setShowSuccessOverlay(false), 2500);
       await fetchFinancialData();
     } catch (err: any) {
-      error('Erro ao salvar', err.message || 'Falha ao registrar lancamento financeiro.');
+      error('Erro ao salvar', err.message || 'Falha ao registrar lançamento financeiro.');
     } finally {
       setIsSaving(false);
     }
@@ -382,7 +382,7 @@ export default function AdminFinancialPage() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
           <div className="relative w-full max-w-sm">
             <Input
-              placeholder="Buscar por descricao, categoria ou origem..."
+              placeholder="Buscar por descrição, categoria ou origem..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 text-xs font-mono bg-brand-input"
@@ -441,7 +441,7 @@ export default function AdminFinancialPage() {
               Nenhum registro financeiro
             </h3>
             <p className="text-xs text-brand-grey mt-2">
-              Cadastre lancamentos ou conclua vendas e ordens de servico para alimentar o fluxo de caixa.
+              Cadastre lançamentos ou conclua vendas e ordens de serviço para alimentar o fluxo de caixa.
             </p>
           </div>
         ) : (
@@ -566,7 +566,7 @@ export default function AdminFinancialPage() {
                 </div>
 
                 <div className="space-y-1 md:col-span-2">
-                  <label className="text-[10px] font-mono text-brand-grey uppercase">Descricao</label>
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Descrição</label>
                   <Input
                     placeholder="Ex: Pagamento de fornecedor de pecas"
                     value={description}

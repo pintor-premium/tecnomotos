@@ -65,7 +65,7 @@ const fiscalStatusLabels: Record<string, string> = {
   authorized: 'Autorizada',
   rejected: 'Rejeitada',
   cancelled: 'Cancelada',
-  contingency: 'Contingencia',
+  contingency: 'Contingência',
   error: 'Erro',
   EMITTED: 'Autorizada',
   CANCELLED: 'Cancelada',
@@ -132,7 +132,7 @@ export default function AdminFiscalPage() {
       await fetchPaidOrders(docs);
     } catch (e: unknown) {
       console.error(e);
-      error('Erro ao carregar', 'Nao foi possivel buscar dados fiscais reais.');
+      error('Erro ao carregar', 'Não foi possível buscar dados fiscais reais.');
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +166,7 @@ export default function AdminFiscalPage() {
 
   const handleEmitInvoice = async (order: PendingFiscalOrder) => {
     setIsEmitting(order.id);
-    info('Emitindo NFC-e', `Enviando pedido #${order.id.slice(0, 8).toUpperCase()} para emissao fiscal.`);
+    info('Emitindo NFC-e', `Enviando pedido #${order.id.slice(0, 8).toUpperCase()} para emissão fiscal.`);
 
     try {
       const response = await fetch('/api/fiscal/emit', {
@@ -181,13 +181,13 @@ export default function AdminFiscalPage() {
       });
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Erro desconhecido na emissao.');
+      if (!response.ok) throw new Error(result.error || 'Erro desconhecido na emissão.');
 
       success('NFC-e registrada', result.reused ? 'Documento fiscal ja existente foi reutilizado.' : 'Documento fiscal registrado com sucesso.');
       await loadFiscalData();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Falha na emissao.';
-      error('Falha de emissao', msg);
+      const msg = e instanceof Error ? e.message : 'Falha na emissão.';
+      error('Falha de emissão', msg);
     } finally {
       setIsEmitting(null);
     }
@@ -203,7 +203,7 @@ export default function AdminFiscalPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Erro ao consultar NFC-e.');
-      success('Situacao atualizada', `Documento fiscal: ${fiscalStatusLabels[result.document.status] || result.document.status}.`);
+      success('Situação atualizada', `Documento fiscal: ${fiscalStatusLabels[result.document.status] || result.document.status}.`);
       await loadFiscalData();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Falha na consulta.';
@@ -239,7 +239,7 @@ export default function AdminFiscalPage() {
         <div className="flex justify-between items-center mt-2 border-b border-brand-grey/15 pb-4">
           <div>
             <h1 className="text-2xl font-black italic uppercase tracking-tight text-white">
-              Emissao Fiscal NFC-e
+              Emissão Fiscal NFC-e
             </h1>
             <p className="text-xs text-brand-grey uppercase tracking-widest font-mono mt-1">
               Monitore documentos fiscais e emita notas a partir de pedidos pagos reais
@@ -251,7 +251,7 @@ export default function AdminFiscalPage() {
 
       <div className="space-y-4">
         <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-brand-grey border-b border-brand-grey/15 pb-2">
-          Pedidos pagos pendentes de emissao
+          Pedidos pagos pendentes de emissão
         </h2>
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -296,7 +296,7 @@ export default function AdminFiscalPage() {
 
       <div className="space-y-4 pt-4">
         <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-brand-grey border-b border-brand-grey/15 pb-2">
-          Historico de Documentos Fiscais
+          Histórico de Documentos Fiscais
         </h2>
 
         {isLoading ? (
@@ -318,10 +318,10 @@ export default function AdminFiscalPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nota / Serie</TableHead>
-                  <TableHead>Situacao Sefaz</TableHead>
-                  <TableHead>Data de Emissao</TableHead>
+                  <TableHead>Situação Sefaz</TableHead>
+                  <TableHead>Data de Emissão</TableHead>
                   <TableHead>Documentos</TableHead>
-                  <TableHead className="text-right">Acoes</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

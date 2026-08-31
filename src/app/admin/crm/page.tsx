@@ -572,7 +572,7 @@ export default function AdminCrmPage() {
                 <div className="space-y-1 md:col-span-2">
                   <label className="text-[10px] font-mono text-brand-grey uppercase">Assunto</label>
                   <Input
-                    placeholder="Ex: Retorno sobre orcamento da revisao"
+                    placeholder="Ex: Retorno sobre orçamento da revisão"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                     required
@@ -580,7 +580,7 @@ export default function AdminCrmPage() {
                 </div>
 
                 <div className="space-y-1 md:col-span-2">
-                  <label className="text-[10px] font-mono text-brand-grey uppercase">Descricao do Atendimento</label>
+                  <label className="text-[10px] font-mono text-brand-grey uppercase">Descrição do Atendimento</label>
                   <textarea
                     rows={4}
                     value={description}
@@ -631,7 +631,7 @@ export default function AdminCrmPage() {
               INTERACAO DE CRM REGISTRADA COM SUCESSO!
             </h3>
             <p className="text-[11px] text-brand-grey leading-normal">
-              O historico do cliente foi atualizado no banco de dados.
+              O histórico do cliente foi atualizado no banco de dados.
             </p>
           </div>
         </div>

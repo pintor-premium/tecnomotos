@@ -27,7 +27,7 @@ export async function createEmployeeAction(input: CreateEmployeeInput) {
 
     const { data: { user: currentUser } } = await supabaseServer.auth.getUser();
     if (!currentUser) {
-      return { success: false, error: 'Nao autorizado.' };
+      return { success: false, error: 'Não autorizado.' };
     }
 
     const { data: hasCreatePermission } = await supabaseServer.rpc('has_permission', {
@@ -36,7 +36,7 @@ export async function createEmployeeAction(input: CreateEmployeeInput) {
     });
 
     if (!hasCreatePermission) {
-      return { success: false, error: 'Voce nao tem permissao para cadastrar funcionarios.' };
+      return { success: false, error: 'Você não tem permissão para cadastrar funcionários.' };
     }
 
     const adminClient = createAdminClient();
@@ -67,7 +67,7 @@ export async function createEmployeeAction(input: CreateEmployeeInput) {
 
     const newUserId = authData.user?.id;
     if (!newUserId) {
-      return { success: false, error: 'Falha ao recuperar o ID do novo funcionario.' };
+      return { success: false, error: 'Falha ao recuperar o ID do novo funcionário.' };
     }
 
     const { data: employeeRole, error: roleErr } = await adminClient
@@ -136,6 +136,6 @@ export async function createEmployeeAction(input: CreateEmployeeInput) {
     return { success: true, userId: newUserId };
   } catch (err) {
     console.error('[createEmployeeAction] Unexpected error:', err);
-    return { success: false, error: err instanceof Error ? err.message : 'Erro inesperado ao cadastrar funcionario.' };
+    return { success: false, error: err instanceof Error ? err.message : 'Erro inesperado ao cadastrar funcionário.' };
   }
 }

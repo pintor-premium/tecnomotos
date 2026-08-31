@@ -21,8 +21,8 @@ const configs = {
   },
   MECHANIC: {
     title: 'Painel do Mecânico',
-    description: 'Ordens de servico, motocicletas e andamento da oficina',
-    badge: 'Mecanico',
+    description: 'Ordens de serviço, motocicletas e andamento da oficina',
+    badge: 'Mecânico',
     links: [
       { href: '/admin/oficina', label: 'Ordens de Serviço' },
       { href: '/admin/clientes', label: 'Clientes' },
@@ -46,7 +46,7 @@ const configs = {
     links: [
       { href: '/admin/financeiro', label: 'Fluxo de Caixa' },
       { href: '/admin/pedidos', label: 'Pedidos' },
-      { href: '/admin/relatorios', label: 'Relatorios' }
+      { href: '/admin/relatorios', label: 'Relatórios' }
     ]
   }
 };

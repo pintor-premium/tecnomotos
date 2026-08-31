@@ -83,14 +83,14 @@ export default async function AdminDashboardPage() {
     {
       title: 'Faturamento',
       value: money(currentMonthRevenue),
-      description: 'Mes corrente',
+      description: 'Mês corrente',
       icon: DollarSign,
       color: 'text-green-400',
     },
     {
       title: 'Pedidos',
       value: String(orderCountRes.count || 0),
-      description: 'Pedidos no mes corrente',
+      description: 'Pedidos no mês corrente',
       icon: ShoppingCart,
       color: 'text-brand-red',
     },
@@ -109,7 +109,7 @@ export default async function AdminDashboardPage() {
       color: 'text-yellow-500',
     },
     {
-      title: 'Ordens de Servico',
+      title: 'Ordens de Serviço',
       value: `${activeServiceRes.count || 0} ativas`,
       description: 'Pendentes ou em andamento',
       icon: Wrench,
@@ -174,7 +174,7 @@ export default async function AdminDashboardPage() {
             Status da Oficina Mecanica
           </h3>
           {recentServices.length === 0 ? (
-            <p className="text-xs text-brand-grey font-mono py-6 text-center">Nenhuma ordem de servico registrada.</p>
+            <p className="text-xs text-brand-grey font-mono py-6 text-center">Nenhuma ordem de serviço registrada.</p>
           ) : (
             <ul className="space-y-3 font-mono text-[11px]">
               {recentServices.map((order) => (
