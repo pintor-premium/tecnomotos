@@ -140,9 +140,6 @@ export default async function AdminDashboardPage() {
               Indicadores reais de performance comercial e operacional
             </p>
           </div>
-          <Badge variant="success">
-            Dados Reais
-          </Badge>
         </div>
       </div>
 
