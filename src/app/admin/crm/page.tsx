@@ -65,7 +65,7 @@ const typeLabels: Record<InteractionType, string> = {
 const statusLabels: Record<CrmStatus, string> = {
   OPEN: 'Aberto',
   FOLLOW_UP: 'Follow-up',
-  DONE: 'Concluido',
+  DONE: 'Concluído',
   CANCELLED: 'Cancelado'
 };
 
@@ -360,7 +360,7 @@ export default function AdminCrmPage() {
           <div className="text-2xl font-black text-sky-400 mt-1">{followUpCount}</div>
         </Card>
         <Card className="p-4">
-          <div className="text-[10px] font-mono uppercase tracking-widest text-brand-grey">Concluidos</div>
+          <div className="text-[10px] font-mono uppercase tracking-widest text-brand-grey">Concluídos</div>
           <div className="text-2xl font-black text-emerald-400 mt-1">{doneCount}</div>
         </Card>
       </div>
@@ -394,7 +394,7 @@ export default function AdminCrmPage() {
                 { id: 'ALL', label: 'Todos' },
                 { id: 'OPEN', label: 'Aberto' },
                 { id: 'FOLLOW_UP', label: 'Follow-up' },
-                { id: 'DONE', label: 'Concluido' }
+                { id: 'DONE', label: 'Concluído' }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -555,7 +555,7 @@ export default function AdminCrmPage() {
                   >
                     <option value="OPEN">Aberto</option>
                     <option value="FOLLOW_UP">Follow-up</option>
-                    <option value="DONE">Concluido</option>
+                    <option value="DONE">Concluído</option>
                     <option value="CANCELLED">Cancelado</option>
                   </select>
                 </div>

@@ -26,7 +26,7 @@ const asNumber = (value: number | string | null | undefined) => parseFloat(Strin
 const serviceStatusLabels: Record<string, string> = {
   PENDING: 'Pendente',
   IN_PROGRESS: 'Em andamento',
-  COMPLETED: 'Concluido',
+  COMPLETED: 'Concluído',
   CANCELLED: 'Cancelado'
 };
 
@@ -171,7 +171,7 @@ export default async function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="space-y-4">
           <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-white border-b border-brand-grey/15 pb-2">
-            Status da Oficina Mecanica
+            Status da Oficina Mecânica
           </h3>
           {recentServices.length === 0 ? (
             <p className="text-xs text-brand-grey font-mono py-6 text-center">Nenhuma ordem de serviço registrada.</p>
